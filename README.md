@@ -8,7 +8,7 @@
 
 Your server. Your rules. Your messages.
 
-[![Version](https://img.shields.io/badge/version-0.4.0--beta-orange)](https://github.com/LL4nc33/coop-messenger/releases)
+[![Version](https://img.shields.io/badge/version-0.0.1.4-orange)](https://github.com/LL4nc33/coop-messenger/releases)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![Based on ntfy](https://img.shields.io/badge/based_on-ntfy_v2.17.0-green)](https://github.com/binwiederhier/ntfy)
 [![Go](https://img.shields.io/badge/Go-1.24-00ADD8?logo=go)](https://go.dev)
