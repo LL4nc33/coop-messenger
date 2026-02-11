@@ -38,7 +38,7 @@ Thanks for your interest in contributing to Coop! This document covers the basic
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/coop-messenger.git
+git clone https://github.com/LL4nc33/coop-messenger.git
 cd coop-messenger
 
 # Build and run with Docker
