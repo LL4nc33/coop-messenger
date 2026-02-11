@@ -1,15 +1,17 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Box, Button, Chip, Container, Divider, Fab, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Button, ButtonBase, Chip, Container, Divider, Fab, IconButton, Link, Stack, Tooltip, Typography } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import ReplyIcon from "@mui/icons-material/Reply";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import { useTranslation } from "react-i18next";
 import session from "../app/Session";
 import userManager from "../app/UserManager";
-import { formatShortDateTime, maybeWithAuth, unmatchedTags } from "../app/utils";
-import { formatTitle } from "../app/notificationUtils";
-import { NotificationBody, Attachment, UserActions } from "./Notifications";
+import { formatBytes, formatShortDateTime, maybeWithAuth, unmatchedTags } from "../app/utils";
+import { formatTitle, isImage } from "../app/notificationUtils";
+import { NotificationBody, UserActions } from "./Notifications";
 import { ReplyContext } from "./App";
 import EmojiReactionPicker from "./EmojiReactionPicker";
+import ImageLightbox from "./ImageLightbox";
 
 const QuoteBlock = ({ replyToText, replyToSender }) => (
   <Box sx={{
@@ -59,6 +61,129 @@ const ReactionChips = ({ reactions, onToggle }) => {
         />
       ))}
     </Box>
+  );
+};
+
+const ChatAttachment = ({ attachment }) => {
+  const { t } = useTranslation();
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const expired = attachment.expires && attachment.expires < Date.now() / 1000;
+
+  if (expired) {
+    return (
+      <Typography variant="caption" sx={{ mt: 1, color: "var(--coop-gray-500)", fontStyle: "italic" }}>
+        {t("chat_attachment_expired", "Anhang abgelaufen")}
+      </Typography>
+    );
+  }
+
+  // Image
+  if (isImage(attachment)) {
+    return (
+      <>
+        <Box
+          component="img"
+          src={attachment.url}
+          loading="lazy"
+          alt={attachment.name || t("chat_attachment_image", "Bild")}
+          onClick={() => setLightboxOpen(true)}
+          sx={{
+            mt: 1,
+            maxWidth: 300,
+            maxHeight: 400,
+            objectFit: "cover",
+            border: "3px solid var(--coop-black)",
+            boxShadow: "var(--coop-shadow-sm)",
+            cursor: "pointer",
+            display: "block",
+            "&:hover": {
+              boxShadow: "var(--coop-shadow)",
+            },
+          }}
+        />
+        <ImageLightbox
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          src={attachment.url}
+          alt={attachment.name}
+        />
+      </>
+    );
+  }
+
+  // Video
+  if (attachment.type?.startsWith("video/")) {
+    return (
+      <Box
+        component="video"
+        controls
+        preload="metadata"
+        src={attachment.url}
+        sx={{
+          mt: 1,
+          maxWidth: 300,
+          maxHeight: 300,
+          border: "3px solid var(--coop-black)",
+          boxShadow: "var(--coop-shadow-sm)",
+          display: "block",
+        }}
+      />
+    );
+  }
+
+  // Audio
+  if (attachment.type?.startsWith("audio/")) {
+    return (
+      <Box
+        component="audio"
+        controls
+        preload="metadata"
+        src={attachment.url}
+        sx={{
+          mt: 1,
+          display: "block",
+          width: "100%",
+          maxWidth: 300,
+        }}
+      />
+    );
+  }
+
+  // Other file type - download link
+  return (
+    <ButtonBase
+      component={Link}
+      href={attachment.url}
+      target="_blank"
+      rel="noopener"
+      sx={{
+        mt: 1,
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
+        p: 1,
+        border: "2px solid var(--coop-black)",
+        boxShadow: "2px 2px 0px var(--coop-black)",
+        textDecoration: "none",
+        color: "var(--coop-black)",
+        "&:hover": {
+          boxShadow: "3px 3px 0px var(--coop-black)",
+          backgroundColor: "var(--coop-gray-100)",
+        },
+      }}
+    >
+      <InsertDriveFileIcon sx={{ fontSize: 20 }} />
+      <Box>
+        <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+          {attachment.name}
+        </Typography>
+        {attachment.size > 0 && (
+          <Typography variant="caption" sx={{ color: "var(--coop-gray-500)" }}>
+            {formatBytes(attachment.size)}
+          </Typography>
+        )}
+      </Box>
+    </ButtonBase>
   );
 };
 
@@ -114,7 +239,7 @@ const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionTog
             <NotificationBody notification={notification} />
           </Typography>
 
-          {notification.attachment && <Attachment attachment={notification.attachment} />}
+          {notification.attachment && <ChatAttachment attachment={notification.attachment} />}
 
           {otherTags.length > 0 && (
             <Box sx={{ mt: 0.5 }}>

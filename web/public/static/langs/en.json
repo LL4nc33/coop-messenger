@@ -458,6 +458,8 @@
   "chat_reply_unknown": "Unbekannt",
   "chat_reply_cancel": "Antwort abbrechen",
   "chat_reaction_add": "Reaktion hinzufuegen",
+  "chat_attachment_expired": "Anhang abgelaufen",
+  "chat_attachment_image": "Bild",
   "invite_error_title": "FEHLER",
   "invite_error_not_found": "Invite nicht gefunden",
   "invite_error_invalid": "Invite nicht gueltig",
