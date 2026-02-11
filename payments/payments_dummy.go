@@ -1,18 +1,14 @@
-//go:build nopayments
-
 package payments
 
-// Available is a constant used to indicate that Stripe support is available.
-// It can be disabled with the 'nopayments' build tag.
+// Available indicates that Stripe payments are not supported in Coop.
 const Available = false
 
-// SubscriptionStatus is a dummy type
+// SubscriptionStatus is a stub type (payments not used in Coop)
 type SubscriptionStatus string
 
-// PriceRecurringInterval is dummy type
+// PriceRecurringInterval is a stub type (payments not used in Coop)
 type PriceRecurringInterval string
 
-// Setup is a dummy type
+// Setup is a no-op (payments not used in Coop)
 func Setup(stripeSecretKey string) {
-	// Nothing to see here
 }

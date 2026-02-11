@@ -18,14 +18,13 @@ var (
 
 func main() {
 	cli.AppHelpTemplate += fmt.Sprintf(`
-Try 'ntfy COMMAND --help' or https://ntfy.sh/docs/ for more information.
+Coop Messenger - A self-hosted, cooperative messenger.
+https://github.com/LL4nc33/coop-messenger
 
-To report a bug, open an issue on GitHub: https://github.com/binwiederhier/ntfy/issues.
-If you want to chat, simply join the Discord server (https://discord.gg/cT7ECsZj9w), or
-the Matrix room (https://matrix.to/#/#ntfy:matrix.org).
+To report a bug, open an issue on GitHub: https://github.com/LL4nc33/coop-messenger/issues
 
-ntfy %s (%s), runtime %s, built at %s
-Copyright (C) Philipp C. Heckel, licensed under Apache License 2.0 & GPLv2
+coop %s (%s), runtime %s, built at %s
+Based on ntfy by Philipp C. Heckel | Licensed under AGPL-3.0
 `, version, maybeShortCommit(commit), runtime.Version(), date)
 
 	app := cmd.New()
