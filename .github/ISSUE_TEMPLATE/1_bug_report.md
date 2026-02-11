@@ -27,5 +27,5 @@ For server logs, check Docker logs: docker compose logs coop
 **Environment**
 - Browser: [e.g. Chrome 120, Firefox 121]
 - OS: [e.g. Windows 11, macOS, Ubuntu]
-- Coop version: [e.g. 0.0.1.4]
+- Coop version: [e.g. 0.0.1.6]
 - Deployment: [Docker / native build]

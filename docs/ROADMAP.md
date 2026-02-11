@@ -47,16 +47,18 @@
 - Send feedback (green border flash on successful send)
 - Mobile drawer auto-close after chat selection
 
+### v0.0.1.6 -- Rich Messages (completed)
+- DB migration 16 -> 17 (reactions table + reply_to/reply_to_text fields)
+- Reply/quote system with inline preview (backend + frontend)
+- Emoji reactions with toggle and quick picker (6 quick reactions)
+- Inline image previews (max 300x400) with neobrutalism lightbox
+- Video/audio player inline in chat bubbles
+- Client-side link previews with domain display
+- Markdown rendering for all messages (code blocks in JetBrains Mono)
+
 ---
 
 ## Upcoming
-
-### v0.0.1.6 -- Rich Messages
-- [ ] Image/media previews in chat
-- [ ] Link previews with metadata
-- [ ] Markdown support in messages
-- [ ] Message reactions
-- [ ] Reply/quote messages
 
 ### v0.0.1.7 -- User Profiles
 - [ ] User avatars (upload + display)
