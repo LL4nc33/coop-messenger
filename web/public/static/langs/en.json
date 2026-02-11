@@ -450,6 +450,7 @@
   "chat_empty_title": "Noch keine Nachrichten",
   "chat_empty_description": "Schreibe die erste Nachricht unten im Eingabefeld.",
   "chat_empty_hint": "Enter = Senden, Shift+Enter = Zeilenumbruch.",
+  "chat_new_messages_button": "Neue Nachrichten",
   "invite_error_title": "FEHLER",
   "invite_error_not_found": "Invite nicht gefunden",
   "invite_error_invalid": "Invite nicht gueltig",

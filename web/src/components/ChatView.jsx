@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Box, Button, Chip, Container, Stack, Typography } from "@mui/material";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Box, Button, Chip, Container, Fab, Stack, Typography } from "@mui/material";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { useTranslation } from "react-i18next";
 import session from "../app/Session";
 import { formatShortDateTime, unmatchedTags } from "../app/utils";
@@ -75,19 +76,73 @@ const ChatBubble = React.memo(({ notification }) => {
   );
 });
 
+const SCROLL_THRESHOLD = 150;
+
+const isNearBottom = (container) => {
+  if (!container) return true;
+  return container.scrollHeight - container.scrollTop - container.clientHeight < SCROLL_THRESHOLD;
+};
+
 const ChatView = ({ notifications, subscription }) => {
   const { t } = useTranslation();
+  const scrollContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [maxCount, setMaxCount] = useState(20);
+  const [showNewMsgButton, setShowNewMsgButton] = useState(false);
+  const wasNearBottomRef = useRef(true);
+  const prevMessageCountRef = useRef(0);
 
   const allMessages = notifications.filter(n => n.event === "message");
   const messages = allMessages.length > maxCount
     ? allMessages.slice(0, maxCount).reverse()
     : [...allMessages].reverse();
 
+  // Track scroll position
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const nearBottom = isNearBottom(container);
+    wasNearBottomRef.current = nearBottom;
+    if (nearBottom) {
+      setShowNewMsgButton(false);
+    }
+  }, []);
+
+  // Find scroll container (the #main element)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const main = document.getElementById("main");
+    if (main) {
+      scrollContainerRef.current = main;
+      main.addEventListener("scroll", handleScroll, { passive: true });
+      return () => main.removeEventListener("scroll", handleScroll);
+    }
+  }, [handleScroll]);
+
+  // Auto-scroll logic on new messages
+  useEffect(() => {
+    if (messages.length === 0) return;
+    const prevCount = prevMessageCountRef.current;
+    prevMessageCountRef.current = messages.length;
+
+    // No new messages
+    if (messages.length <= prevCount) return;
+
+    const lastMsg = messages[messages.length - 1];
+    const isOwnMessage = lastMsg?.sender === session.username();
+
+    if (isOwnMessage || wasNearBottomRef.current) {
+      // Auto-scroll to bottom
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      // User is reading old messages - show button
+      setShowNewMsgButton(true);
+    }
   }, [messages.length]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowNewMsgButton(false);
+  };
 
   return (
     <Container maxWidth="md" sx={{ pt: 2, pb: "100px" }}>
@@ -126,6 +181,43 @@ const ChatView = ({ notifications, subscription }) => {
         ))}
       </Stack>
       <div ref={messagesEndRef} />
+
+      {/* "Neue Nachrichten" floating button */}
+      {showNewMsgButton && (
+        <Fab
+          size="small"
+          onClick={scrollToBottom}
+          aria-label={t("chat_new_messages_button", "Neue Nachrichten")}
+          sx={{
+            position: "fixed",
+            bottom: 90,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 1200,
+            backgroundColor: "var(--coop-yellow)",
+            color: "var(--coop-black)",
+            border: "3px solid var(--coop-black)",
+            borderRadius: 0,
+            boxShadow: "var(--coop-shadow)",
+            fontFamily: "var(--coop-font-display)",
+            fontWeight: 700,
+            fontSize: "0.75rem",
+            textTransform: "uppercase",
+            px: 2,
+            width: "auto",
+            height: "auto",
+            minHeight: 36,
+            "&:hover": {
+              backgroundColor: "var(--coop-yellow-hover)",
+              boxShadow: "var(--coop-shadow-hover)",
+              transform: "translateX(-50%) translate(-2px, -2px)",
+            },
+          }}
+        >
+          <KeyboardArrowDownIcon sx={{ mr: 0.5, fontSize: 18 }} />
+          {t("chat_new_messages_button", "Neue Nachrichten")}
+        </Fab>
+      )}
     </Container>
   );
 };
