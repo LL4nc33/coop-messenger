@@ -238,7 +238,7 @@ const NavList = (props) => {
               </ListItemIcon>
               <ListItemText primary={t("nav_button_all_notifications")} />
             </ListItemButton>
-            <SubscriptionList subscriptions={props.subscriptions} selectedSubscription={props.selectedSubscription} />
+            <SubscriptionList subscriptions={props.subscriptions} selectedSubscription={props.selectedSubscription} onMobileDrawerToggle={props.onMobileDrawerToggle} />
             <Divider sx={{ my: 1 }} />
           </>
         )}
@@ -401,6 +401,7 @@ const SubscriptionList = (props) => {
           key={subscription.id}
           subscription={subscription}
           selected={props.selectedSubscription && props.selectedSubscription.id === subscription.id}
+          onMobileDrawerToggle={props.onMobileDrawerToggle}
         />
       ))}
     </>
@@ -441,6 +442,10 @@ const SubscriptionItem = (props) => {
   const handleClick = async () => {
     navigate(routes.forSubscription(subscription));
     await subscriptionManager.markNotificationsRead(subscription.id);
+    // Auto-close mobile drawer on chat selection
+    if (window.innerWidth < 600 && props.onMobileDrawerToggle) {
+      props.onMobileDrawerToggle();
+    }
   };
 
   return (
