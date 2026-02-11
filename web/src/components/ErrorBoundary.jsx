@@ -77,9 +77,9 @@ class ErrorBoundaryImpl extends React.Component {
           <Trans
             i18nKey="error_boundary_unsupported_indexeddb_description"
             components={{
-              githubLink: <Link href="https://github.com/binwiederhier/ntfy/issues/208" />,
-              discordLink: <Link href="https://discord.gg/cT7ECsZj9w" />,
-              matrixLink: <Link href="https://matrix.to/#/#ntfy:matrix.org" />,
+              githubLink: <Link href="https://github.com/oidanice/coop/issues" />,
+              discordLink: <Link href="https://github.com/oidanice/coop/issues" />,
+              matrixLink: <Link href="https://github.com/oidanice/coop/issues" />,
             }}
           />
         </p>
@@ -96,9 +96,9 @@ class ErrorBoundaryImpl extends React.Component {
           <Trans
             i18nKey="error_boundary_description"
             components={{
-              githubLink: <Link href="https://github.com/binwiederhier/ntfy/issues" />,
-              discordLink: <Link href="https://discord.gg/cT7ECsZj9w" />,
-              matrixLink: <Link href="https://matrix.to/#/#ntfy:matrix.org" />,
+              githubLink: <Link href="https://github.com/oidanice/coop/issues" />,
+              discordLink: <Link href="https://github.com/oidanice/coop/issues" />,
+              matrixLink: <Link href="https://github.com/oidanice/coop/issues" />,
             }}
           />
         </p>

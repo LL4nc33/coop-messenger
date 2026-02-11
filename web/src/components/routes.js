@@ -7,6 +7,9 @@ const routes = {
   app: config.app_root,
   account: "/account",
   settings: "/settings",
+  admin: "/admin",
+  docs: "/docs",
+  invite: "/invite/:token",
   subscription: "/:topic",
   subscriptionExternal: "/:baseUrl/:topic",
   forSubscription: (subscription) => {

@@ -111,6 +111,7 @@ var (
 	apiAccountBillingSubscriptionCheckoutSuccessTemplate = "/v1/account/billing/subscription/success/{CHECKOUT_SESSION_ID}"
 	apiAccountBillingSubscriptionCheckoutSuccessRegex    = regexp.MustCompile(`/v1/account/billing/subscription/success/(.+)$`)
 	apiAccountReservationSingleRegex                     = regexp.MustCompile(`/v1/account/reservation/([-_A-Za-z0-9]{1,64})$`)
+	invitePageRegex                                      = regexp.MustCompile(`^/invite/[A-Za-z0-9]+$`)
 	staticRegex                                          = regexp.MustCompile(`^/(static/.+|app.html|sw.js|sw.js.map)$`)
 	docsRegex                                            = regexp.MustCompile(`^/docs(|/.*)$`)
 	fileRegex                                            = regexp.MustCompile(`^/file/([-_A-Za-z0-9]{1,64})(?:\.[A-Za-z0-9]{1,16})?$`)
@@ -536,6 +537,44 @@ func (s *Server) handleInternal(w http.ResponseWriter, r *http.Request, v *visit
 		return s.ensureWebPushEnabled(s.limitRequests(s.handleWebPushUpdate))(w, r, v)
 	} else if r.Method == http.MethodDelete && apiWebPushPath == r.URL.Path {
 		return s.ensureWebPushEnabled(s.limitRequests(s.handleWebPushDelete))(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == apiAdminUsersPath {
+		return s.ensureAdmin(s.handleAdminUsersGet)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAdminUsersPath {
+		return s.ensureAdmin(s.handleAdminUserCreate)(w, r, v)
+	} else if r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, apiAdminUsersPath+"/") {
+		return s.ensureAdmin(s.handleAdminUserUpdate)(w, r, v)
+	} else if r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, apiAdminUsersPath+"/") {
+		return s.ensureAdmin(s.handleAdminUserDelete)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/admin/topics/stats" {
+		return s.ensureAdmin(s.handleAdminTopicStatsList)(w, r, v)
+	} else if r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, "/v1/admin/topics/") {
+		return s.ensureAdmin(s.handleAdminTopicDelete)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == apiAdminTopicsPath {
+		return s.ensureAdmin(s.handleAdminTopicsGet)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAdminTopicsPath {
+		return s.ensureAdmin(s.handleAdminTopicAccessGrant)(w, r, v)
+	} else if r.Method == http.MethodDelete && r.URL.Path == apiAdminTopicsPath {
+		return s.ensureAdmin(s.handleAdminTopicAccessRevoke)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/invites" {
+		return s.ensureAdmin(s.handleInviteCreate)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/invites" {
+		return s.ensureAdmin(s.handleInviteList)(w, r, v)
+	} else if r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, "/v1/invites/") {
+		return s.ensureAdmin(s.handleInviteDelete)(w, r, v)
+	} else if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/v1/invite/") && strings.HasSuffix(r.URL.Path, "/join") {
+		return s.ensureUser(s.handleInviteJoin)(w, r, v)
+	} else if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/v1/invite/") && !strings.HasSuffix(r.URL.Path, "/redeem") && !strings.HasSuffix(r.URL.Path, "/join") {
+		return s.limitRequests(s.handleInviteInfo)(w, r, v)
+	} else if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/v1/invite/") && strings.HasSuffix(r.URL.Path, "/redeem") {
+		return s.limitRequests(s.handleInviteRedeem)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/join-requests" {
+		return s.ensureUser(s.limitRequests(s.handleJoinRequestCreate))(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/join-requests" {
+		return s.ensureAdmin(s.handleJoinRequestList)(w, r, v)
+	} else if r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, "/v1/join-requests/") {
+		return s.ensureAdmin(s.handleJoinRequestResolve)(w, r, v)
+	} else if r.Method == http.MethodGet && invitePageRegex.MatchString(r.URL.Path) {
+		return s.ensureWebEnabled(s.handleRoot)(w, r, v)
 	} else if r.Method == http.MethodGet && r.URL.Path == apiStatsPath {
 		return s.handleStats(w, r, v)
 	} else if r.Method == http.MethodGet && r.URL.Path == apiTiersPath {
@@ -650,14 +689,14 @@ func (s *Server) configResponse() *apiConfigResponse {
 // handleWebManifest serves the web app manifest for the progressive web app (PWA)
 func (s *Server) handleWebManifest(w http.ResponseWriter, _ *http.Request, _ *visitor) error {
 	response := &webManifestResponse{
-		Name:            "ntfy",
-		Description:     "ntfy lets you send push notifications via scripts from any computer or phone",
-		ShortName:       "ntfy",
+		Name:            "Coop – Private Messenger",
+		Description:     "Self-Hosted Private Messaging",
+		ShortName:       "Coop",
 		Scope:           "/",
 		StartURL:        s.config.WebRoot,
 		Display:         "standalone",
-		BackgroundColor: "#ffffff",
-		ThemeColor:      "#317f6f",
+		BackgroundColor: "#FFFDF7",
+		ThemeColor:      "#FFD700",
 		Icons: []*webManifestIcon{
 			{SRC: "/static/images/pwa-192x192.png", Sizes: "192x192", Type: "image/png"},
 			{SRC: "/static/images/pwa-512x512.png", Sizes: "512x512", Type: "image/png"},
@@ -824,6 +863,9 @@ func (s *Server) handlePublishInternal(r *http.Request, v *visitor) (*message, e
 	}
 	m.Sender = v.IP()
 	m.User = v.MaybeUserID()
+	if u := v.User(); u != nil {
+		m.SenderName = u.Name
+	}
 	if cache {
 		m.Expires = time.Unix(m.Time, 0).Add(v.Limits().MessageExpiryDuration).Unix()
 	}

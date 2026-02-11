@@ -48,7 +48,7 @@ export const isImage = (attachment) => {
   return attachment.name?.match(imageRegex) || attachment.url?.match(imageRegex);
 };
 
-export const icon = "/static/images/ntfy.png";
+export const icon = "/static/images/coop.png";
 export const badge = "/static/images/mask-icon.svg";
 
 /**

@@ -15,11 +15,14 @@ import { expandUrl, getKebabCaseLangStr, darkModeEnabled, updateFavicon } from "
 import ErrorBoundary from "./ErrorBoundary";
 import routes from "./routes";
 import { useAccountListener, useBackgroundProcesses, useConnectionListeners, useWebPushTopics } from "./hooks";
-import PublishDialog from "./PublishDialog";
 import Messaging from "./Messaging";
 import Login from "./Login";
 import Signup from "./Signup";
 import Account from "./Account";
+import AdminPanel from "./AdminPanel";
+import InvitePage from "./InvitePage";
+import DocsPage from "./DocsPage";
+import "../css/coop.css"; // Coop Neobrutalism Design System
 import initI18n from "../app/i18n"; // Translations!
 import prefs from "../app/Prefs";
 import RTLCacheProvider from "./RTLCacheProvider";
@@ -36,9 +39,45 @@ const App = () => {
   const accountMemo = useMemo(() => ({ account, setAccount }), [account, setAccount]);
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
   const themePreference = useLiveQuery(() => prefs.theme());
+  const accentPref = useLiveQuery(() => prefs.accentColor());
+  const customAccent = useLiveQuery(() => prefs.customAccentColor());
+
+  const accentPresets = {
+    earth:  { light: "#C4A265", dark: "#8B9A6B" },
+    khaki:  { light: "#B8A88A", dark: "#6B8E6B" },
+    olive:  { light: "#A89272", dark: "#7D8B69" },
+    gold:   { light: "#FFD700", dark: "#FFD700" },
+  };
+
+  const darkenColor = (hex, amount = 30) => {
+    const num = parseInt(hex.replace("#", ""), 16);
+    const r = Math.max(0, (num >> 16) - amount);
+    const g = Math.max(0, ((num >> 8) & 0x00FF) - amount);
+    const b = Math.max(0, (num & 0x0000FF) - amount);
+    return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, "0")}`;
+  };
+
+  const getAccentColor = () => {
+    const isDark = darkModeEnabled(prefersDarkMode, themePreference);
+    if (accentPref === "custom" && customAccent) {
+      return customAccent;
+    }
+    const preset = accentPresets[accentPref] || accentPresets.earth;
+    return isDark ? preset.dark : preset.light;
+  };
+
+  const accentColor = getAccentColor();
+
   const theme = React.useMemo(
-    () => createTheme({ ...(darkModeEnabled(prefersDarkMode, themePreference) ? darkTheme : lightTheme), direction: languageDir }),
-    [prefersDarkMode, themePreference, languageDir]
+    () => {
+      const base = darkModeEnabled(prefersDarkMode, themePreference) ? darkTheme : lightTheme;
+      return createTheme({
+        ...base,
+        palette: { ...base.palette, primary: { main: accentColor } },
+        direction: languageDir,
+      });
+    },
+    [prefersDarkMode, themePreference, languageDir, accentColor]
   );
 
   useEffect(() => {
@@ -47,7 +86,16 @@ const App = () => {
   }, [i18n.language, languageDir]);
 
   useEffect(() => {
-    if (!session.exists() && config.require_login && window.location.pathname !== routes.login) {
+    const isDark = darkModeEnabled(prefersDarkMode, themePreference);
+    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+    document.documentElement.style.setProperty("--coop-accent", accentColor);
+    document.documentElement.style.setProperty("--coop-accent-hover", darkenColor(accentColor));
+  }, [prefersDarkMode, themePreference, accentColor]);
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    const isPublicRoute = path === routes.login || path === routes.signup || path.startsWith("/invite/");
+    if (!session.exists() && config.require_login && !isPublicRoute) {
       window.location.href = routes.login;
     }
   }, []);
@@ -63,10 +111,13 @@ const App = () => {
                 <Routes>
                   <Route path={routes.login} element={<Login />} />
                   <Route path={routes.signup} element={<Signup />} />
+                  <Route path={routes.invite} element={<InvitePage />} />
                   <Route element={<Layout />}>
                     <Route path={routes.app} element={<AllSubscriptions />} />
                     <Route path={routes.account} element={<Account />} />
                     <Route path={routes.settings} element={<Preferences />} />
+                    <Route path={routes.admin} element={<AdminPanel />} />
+                    <Route path={routes.docs} element={<DocsPage />} />
                     <Route path={routes.subscription} element={<SingleSubscription />} />
                     <Route path={routes.subscriptionExternal} element={<SingleSubscription />} />
                   </Route>
@@ -81,7 +132,7 @@ const App = () => {
 };
 
 const updateTitle = (newNotificationsCount) => {
-  document.title = newNotificationsCount > 0 ? `(${newNotificationsCount}) ntfy` : "ntfy";
+  document.title = newNotificationsCount > 0 ? `(${newNotificationsCount}) Coop` : "Coop";
   window.navigator.setAppBadge?.(newNotificationsCount);
   updateFavicon(newNotificationsCount);
 };
@@ -90,7 +141,6 @@ const Layout = () => {
   const params = useParams();
   const { account, setAccount } = useContext(AccountContext);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [sendDialogOpenMode, setSendDialogOpenMode] = useState("");
   const users = useLiveQuery(() => userManager.all());
   const subscriptions = useLiveQuery(() => subscriptionManager.all());
   const webPushTopics = useWebPushTopics();
@@ -115,7 +165,6 @@ const Layout = () => {
         selectedSubscription={selected}
         mobileDrawerOpen={mobileDrawerOpen}
         onMobileDrawerToggle={() => setMobileDrawerOpen(!mobileDrawerOpen)}
-        onPublishMessageClick={() => setSendDialogOpenMode(PublishDialog.OPEN_MODE_DEFAULT)}
       />
       <Main>
         <Toolbar />
@@ -126,7 +175,7 @@ const Layout = () => {
           }}
         />
       </Main>
-      <Messaging selected={selected} dialogOpenMode={sendDialogOpenMode} onDialogOpenModeChange={setSendDialogOpenMode} />
+      <Messaging selected={selected} />
     </Box>
   );
 };
@@ -143,7 +192,7 @@ const Main = (props) => (
       width: { sm: `calc(100% - ${Navigation.width}px)` },
       height: "100dvh",
       overflow: "auto",
-      backgroundColor: ({ palette }) => (palette.mode === "light" ? palette.grey[100] : palette.grey[900]),
+      backgroundColor: ({ palette }) => palette.background.default,
     }}
   >
     {props.children}
@@ -155,7 +204,7 @@ const Loader = () => (
     open
     sx={{
       zIndex: 100000,
-      backgroundColor: ({ palette }) => (palette.mode === "light" ? palette.grey[100] : palette.grey[900]),
+      backgroundColor: ({ palette }) => palette.background.default,
     }}
   >
     <CircularProgress color="success" disableShrink />

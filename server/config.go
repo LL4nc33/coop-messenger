@@ -16,7 +16,7 @@ import (
 // Defines default config settings (excluding limits, see below)
 const (
 	DefaultListenHTTP                           = ":80"
-	DefaultCacheDuration                        = 12 * time.Hour
+	DefaultCacheDuration                        = 0 // Coop: Messages are persistent by default
 	DefaultCacheBatchTimeout                    = time.Duration(0)
 	DefaultKeepaliveInterval                    = 45 * time.Second // Not too frequently to save battery (Android read timeout used to be 77s!)
 	DefaultManagerInterval                      = time.Minute
@@ -50,7 +50,7 @@ const (
 	DefaultTotalTopicLimit          = 15000
 	DefaultAttachmentTotalSizeLimit = int64(5 * 1024 * 1024 * 1024) // 5 GB
 	DefaultAttachmentFileSizeLimit  = int64(15 * 1024 * 1024)       // 15 MB
-	DefaultAttachmentExpiryDuration = 3 * time.Hour
+	DefaultAttachmentExpiryDuration = 0 // Coop: Attachments are persistent by default
 )
 
 // Defines all per-visitor limits
