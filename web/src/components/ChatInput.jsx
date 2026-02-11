@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Paper, TextField, IconButton, Portal, Snackbar } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import { useTranslation } from "react-i18next";
@@ -8,12 +8,18 @@ const ChatInput = ({ onSend }) => {
   const { t } = useTranslation();
   const [message, setMessage] = useState("");
   const [error, setError] = useState(false);
+  const [sendSuccess, setSendSuccess] = useState(false);
+  const successTimerRef = useRef(null);
 
   const handleSend = async () => {
     if (message.trim()) {
       try {
         await onSend(message.trim());
         setMessage("");
+        // Flash green border briefly
+        setSendSuccess(true);
+        clearTimeout(successTimerRef.current);
+        successTimerRef.current = setTimeout(() => setSendSuccess(false), 400);
       } catch (e) {
         console.error("[ChatInput] Error sending", e);
         setError(true);
@@ -58,13 +64,14 @@ const ChatInput = ({ onSend }) => {
         sx={{
           "& .MuiOutlinedInput-root": {
             borderRadius: 0,
-            border: "3px solid var(--coop-black)",
-            boxShadow: "var(--coop-shadow)",
+            border: sendSuccess ? "3px solid var(--coop-green)" : "3px solid var(--coop-black)",
+            boxShadow: sendSuccess ? "4px 4px 0px var(--coop-green)" : "var(--coop-shadow)",
             backgroundColor: "var(--coop-white)",
             color: "var(--coop-black)",
+            transition: "border-color 0.2s ease, box-shadow 0.2s ease",
             "& fieldset": { border: "none" },
-            "&:hover": { boxShadow: "var(--coop-shadow-hover)" },
-            "&.Mui-focused": { boxShadow: "var(--coop-shadow-hover)" },
+            "&:hover": { boxShadow: sendSuccess ? "4px 4px 0px var(--coop-green)" : "var(--coop-shadow-hover)" },
+            "&.Mui-focused": { boxShadow: sendSuccess ? "4px 4px 0px var(--coop-green)" : "var(--coop-shadow-hover)" },
           },
         }}
       />
