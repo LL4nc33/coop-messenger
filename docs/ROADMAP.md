@@ -29,7 +29,7 @@
 - DB migration 15 -> 16 (join_requests table)
 - `auth-default-access: deny-all` as default configuration
 
-### v0.0.1.4 -- UX & Polish (current)
+### v0.0.1.4 -- UX & Polish (completed)
 - Welcome/dashboard page with chat cards and greeting
 - Theme toggle (light/dark) with configurable accent colors
 - Notification fix: own messages don't trigger notifications or unread badges
@@ -39,18 +39,17 @@
 - Invite links auto-subscribe users to topics
 - In-app documentation page (user + admin tabs)
 
+### v0.0.1.5 -- UX Quick Wins (completed)
+- Smart auto-scroll (only scroll when near bottom, "Neue Nachrichten" button)
+- Chat sorting by most recent activity (newest first in sidebar)
+- Unread message highlighting with pink badge in chat list
+- Date separators in chat view ("Heute", "Gestern", DD.MM.YYYY)
+- Send feedback (green border flash on successful send)
+- Mobile drawer auto-close after chat selection
+
 ---
 
 ## Upcoming
-
-### v0.0.1.5 -- UX Quick Wins
-- [ ] Mobile drawer auto-close after navigation
-- [ ] Chat sorting by most recent activity
-- [ ] Smart auto-scroll (only when at bottom)
-- [ ] Unread message highlighting in chat list
-- [ ] Date separators in chat view
-- [ ] Send feedback (animation/sound)
-- [ ] Typing indicators (stretch goal)
 
 ### v0.0.1.6 -- Rich Messages
 - [ ] Image/media previews in chat
