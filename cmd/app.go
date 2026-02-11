@@ -1,4 +1,4 @@
-// Package cmd provides the ntfy CLI application
+// Package cmd provides the Coop server CLI
 package cmd
 
 import (
@@ -41,9 +41,9 @@ var (
 // New creates a new CLI application
 func New() *cli.App {
 	return &cli.App{
-		Name:                   "ntfy",
-		Usage:                  "Simple pub-sub notification service",
-		UsageText:              "ntfy [OPTION..]",
+		Name:                   "coop",
+		Usage:                  "Self-hosted cooperative messenger",
+		UsageText:              "coop [OPTION..]",
 		HideVersion:            true,
 		UseShortOptionHandling: true,
 		Reader:                 os.Stdin,
