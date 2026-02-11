@@ -149,7 +149,8 @@ See [ROADMAP.md](docs/ROADMAP.md) for the full roadmap.
 **Current priorities:**
 - UX polish (auto-scroll, unread highlighting, date separators)
 - Media previews and rich message content
-- User profiles and avatars
+- Standalone Coop API (breaking ntfy client compatibility)
+- Native Android and iOS apps
 
 **Long-term vision:**
 Coop aims to become a **cooperative messaging network** where self-hosted servers can communicate with each other -- similar to how email or Matrix federation works. Run your own server, but still chat with people on other Coop instances. This is an ambitious goal and contributions are very welcome.

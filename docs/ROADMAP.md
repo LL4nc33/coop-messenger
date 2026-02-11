@@ -63,8 +63,10 @@
 - [ ] "Last seen" indicator
 - [ ] Member list per chat
 
-### v0.8.0 -- Mobile App Integration
-- [ ] Custom ntfy-android fork with Coop UI
+### v0.8.0 -- Standalone API & Native Apps
+- [ ] Custom Coop API (breaking ntfy client compatibility)
+- [ ] Coop Android app (standalone, not an ntfy fork)
+- [ ] Coop iOS app (standalone)
 - [ ] Push notification improvements
 - [ ] Offline message queue
 
@@ -109,4 +111,6 @@ Coop started as a fork of ntfy v2.17.0. Here's what's different:
 | i18n | Multi-language | German-first |
 | Home page | All notifications | Welcome dashboard |
 | Subscriptions | Manual topic entry | Auto-generated chat IDs |
-| API | Unchanged | Extended with invite/join endpoints |
+| API | Unchanged | Extended with invite/join endpoints (full API separation planned) |
+| Mobile apps | ntfy Android/iOS | Own Coop apps (planned) |
+| Compatibility | Open ecosystem | Standalone, not ntfy-compatible by design |
