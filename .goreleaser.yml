@@ -67,10 +67,10 @@ builds:
     goarch: [ amd64, arm64 ] # will be combined to "universal binary" (see below)
 nfpms:
   - package_name: ntfy
-    homepage: https://heckel.io/ntfy
-    maintainer: Philipp C. Heckel <philipp.heckel@gmail.com>
-    description: Simple pub-sub notification service
-    license: Apache 2.0
+    homepage: https://github.com/LL4nc33/coop-messenger
+    maintainer: LL4nc33
+    description: A self-hosted, cooperative messenger
+    license: AGPL-3.0
     formats:
       - deb
       - rpm
@@ -150,21 +150,21 @@ changelog:
       - '^test:'
 dockers:
   - image_templates:
-      - &amd64_image "binwiederhier/ntfy:{{ .Tag }}-amd64"
+      - &amd64_image "ll4nc33/coop:{{ .Tag }}-amd64"
     use: buildx
     dockerfile: Dockerfile
     goarch: amd64
     build_flag_templates:
       - "--platform=linux/amd64"
   - image_templates:
-      - &arm64v8_image "binwiederhier/ntfy:{{ .Tag }}-arm64v8"
+      - &arm64v8_image "ll4nc33/coop:{{ .Tag }}-arm64v8"
     use: buildx
     dockerfile: Dockerfile-arm
     goarch: arm64
     build_flag_templates:
       - "--platform=linux/arm64/v8"
   - image_templates:
-      - &armv7_image "binwiederhier/ntfy:{{ .Tag }}-armv7"
+      - &armv7_image "ll4nc33/coop:{{ .Tag }}-armv7"
     use: buildx
     dockerfile: Dockerfile-arm
     goarch: arm
@@ -172,7 +172,7 @@ dockers:
     build_flag_templates:
       - "--platform=linux/arm/v7"
   - image_templates:
-      - &armv6_image "binwiederhier/ntfy:{{ .Tag }}-armv6"
+      - &armv6_image "ll4nc33/coop:{{ .Tag }}-armv6"
     use: buildx
     dockerfile: Dockerfile-arm
     goarch: arm
@@ -180,25 +180,25 @@ dockers:
     build_flag_templates:
       - "--platform=linux/arm/v6"
 docker_manifests:
-  - name_template: "binwiederhier/ntfy:latest"
+  - name_template: "ll4nc33/coop:latest"
     image_templates:
       - *amd64_image
       - *arm64v8_image
       - *armv7_image
       - *armv6_image
-  - name_template: "binwiederhier/ntfy:{{ .Tag }}"
+  - name_template: "ll4nc33/coop:{{ .Tag }}"
     image_templates:
       - *amd64_image
       - *arm64v8_image
       - *armv7_image
       - *armv6_image
-  - name_template: "binwiederhier/ntfy:v{{ .Major }}"
+  - name_template: "ll4nc33/coop:v{{ .Major }}"
     image_templates:
       - *amd64_image
       - *arm64v8_image
       - *armv7_image
       - *armv6_image
-  - name_template: "binwiederhier/ntfy:v{{ .Major }}.{{ .Minor }}"
+  - name_template: "ll4nc33/coop:v{{ .Major }}.{{ .Minor }}"
     image_templates:
       - *amd64_image
       - *arm64v8_image

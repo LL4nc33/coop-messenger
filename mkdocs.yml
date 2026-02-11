@@ -1,10 +1,10 @@
 site_dir: server/docs
-site_name: ntfy
-site_url: https://ntfy.sh
-site_description: Send push notifications to your phone via PUT/POST
-copyright: Made with ❤️ by Philipp C. Heckel
-repo_name: binwiederhier/ntfy
-repo_url: https://github.com/binwiederhier/ntfy
+site_name: Coop Messenger
+site_url: https://github.com/LL4nc33/coop-messenger
+site_description: A self-hosted, cooperative messenger built for real conversations
+copyright: Based on ntfy by Philipp C. Heckel | Coop by LL4nc33
+repo_name: LL4nc33/coop-messenger
+repo_url: https://github.com/LL4nc33/coop-messenger
 edit_uri: blob/main/docs/
 
 theme:
@@ -39,7 +39,7 @@ extra:
   homepage: /
   social:
     - icon: fontawesome/brands/github-alt
-      link: https://github.com/binwiederhier
+      link: https://github.com/LL4nc33
 extra_javascript:
   - static/js/extra.js
 extra_css:
