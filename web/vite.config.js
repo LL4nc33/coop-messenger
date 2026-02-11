@@ -10,7 +10,13 @@ export default defineConfig(({ mode }) => ({
     sourcemap: true,
   },
   server: {
-    port: 3000,
+    port: 3001,
+    proxy: {
+      "/v1": "http://localhost:9090",
+      "/static/langs": "http://localhost:9090",
+      "/config.js": "http://localhost:9090",
+      "/manifest.webmanifest": "http://localhost:9090",
+    },
   },
   plugins: [
     react(),

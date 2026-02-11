@@ -1,15 +1,19 @@
 services:
-  ntfy:
-    image: binwiederhier/ntfy
-    container_name: ntfy
+  coop:
+    build:
+      context: .
+      dockerfile: Dockerfile-coop
+    container_name: coop
     command:
       - serve
-    environment:
-      - TZ=UTC    # optional: Change to your desired timezone
-    user: UID:GID # optional: Set custom user/group or uid/gid
-    volumes:
-      - /var/cache/ntfy:/var/cache/ntfy
-      - /etc/ntfy:/etc/ntfy
     ports:
-      - 80:80
+      - "9090:80"
+    volumes:
+      - ./config/server.yml:/etc/ntfy/server.yml
+      - coop-data:/var/lib/coop
+    environment:
+      - TZ=Europe/Vienna
     restart: unless-stopped
+
+volumes:
+  coop-data:

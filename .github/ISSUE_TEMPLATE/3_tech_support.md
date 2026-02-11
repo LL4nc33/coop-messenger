@@ -1,21 +1,19 @@
 ---
-name: 🆘 I need help with ...
-about: Installing ntfy, configuring the app, etc.
+name: Help / Question
+about: Need help with setup, configuration, or usage
 title: ''
-labels: 'tech-support'
+labels: 'question'
 assignees: ''
 
 ---
 
+**Question**
+<!-- Describe what you need help with. -->
 
-<!--
+**What I've tried**
+<!-- Any steps you've already taken to solve the problem. -->
 
-STOP! 
-
-This is not the right place to ask for help. Consider asking on Discord/Matrix instead. 
-You'll usually get an answer sooner, and there are more people there to help!
-
-- Discord: https://discord.gg/cT7ECsZj9w
-- Matrix: https://matrix.to/#/#ntfy:matrix.org / https://matrix.to/#/#ntfy-space:matrix.org
-
--->
+**Environment**
+- OS: [e.g. Ubuntu 22.04, Windows 11]
+- Docker version: [e.g. 24.0]
+- Coop version: [e.g. 0.4.0]

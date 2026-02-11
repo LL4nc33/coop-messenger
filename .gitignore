@@ -16,3 +16,27 @@ __pycache__
 web/dev-dist/
 venv/
 cmd/key-file.yaml
+
+# Databases (never commit user data)
+*.db
+*.db-shm
+*.db-wal
+
+# Runtime data
+/var/
+attachments/
+
+# Secrets & credentials
+*.env
+.env.*
+*.pem
+*.key
+
+# Claude Code / AI tooling
+.claude/
+.claude-plugin/
+.playwright-mcp/
+
+# OS files
+Thumbs.db
+Desktop.ini

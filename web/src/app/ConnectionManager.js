@@ -73,11 +73,7 @@ class ConnectionManager {
           (subId, state) => this.stateChanged(subId, state)
         );
         this.connections.set(connectionId, connection);
-        console.log(
-          `[ConnectionManager] Starting new connection ${connectionId} (subscription ${subscriptionId} with user ${
-            user ? user.username : "anonymous"
-          })`
-        );
+        console.log(`[ConnectionManager] Starting new connection ${connectionId}`);
         connection.start();
       }
     });

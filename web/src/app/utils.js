@@ -276,17 +276,7 @@ export const urlB64ToUint8Array = (base64String) => {
 };
 
 export const darkModeEnabled = (prefersDarkMode, themePreference) => {
-  switch (themePreference) {
-    case THEME.DARK:
-      return true;
-
-    case THEME.LIGHT:
-      return false;
-
-    case THEME.SYSTEM:
-    default:
-      return prefersDarkMode;
-  }
+  return themePreference === THEME.DARK;
 };
 
 // Canvas-based favicon with a red notification dot when there are unread messages
@@ -306,7 +296,7 @@ const loadFaviconIcon = () =>
     };
     img.onerror = () => resolve(null);
     // Use PNG instead of ICO — .ico files can't be reliably drawn to canvas in all browsers
-    img.src = "/static/images/ntfy.png";
+    img.src = "/static/images/coop.png";
   });
 
 export const updateFavicon = async (count) => {

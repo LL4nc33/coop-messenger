@@ -3,7 +3,6 @@ import db from "./db";
 export const THEME = {
   DARK: "dark",
   LIGHT: "light",
-  SYSTEM: "system",
 };
 
 class Prefs {
@@ -49,11 +48,29 @@ class Prefs {
 
   async theme() {
     const theme = await this.db.prefs.get("theme");
-    return theme?.value ?? THEME.SYSTEM;
+    return theme?.value ?? THEME.LIGHT;
   }
 
   async setTheme(mode) {
     await this.db.prefs.put({ key: "theme", value: mode });
+  }
+
+  async accentColor() {
+    const accent = await this.db.prefs.get("accentColor");
+    return accent?.value ?? "earth";
+  }
+
+  async setAccentColor(color) {
+    await this.db.prefs.put({ key: "accentColor", value: color });
+  }
+
+  async customAccentColor() {
+    const custom = await this.db.prefs.get("customAccentColor");
+    return custom?.value ?? "#C4A265";
+  }
+
+  async setCustomAccentColor(hex) {
+    await this.db.prefs.put({ key: "customAccentColor", value: hex });
   }
 }
 

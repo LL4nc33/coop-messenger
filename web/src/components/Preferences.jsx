@@ -249,10 +249,9 @@ const Theme = () => {
   return (
     <Pref labelId={labelId} title={t("prefs_appearance_theme_title")}>
       <FormControl fullWidth variant="standard" sx={{ m: 1 }}>
-        <Select value={theme ?? THEME.SYSTEM} onChange={handleChange} aria-labelledby={labelId}>
-          <MenuItem value={THEME.SYSTEM}>{t("prefs_appearance_theme_system")}</MenuItem>
-          <MenuItem value={THEME.DARK}>{t("prefs_appearance_theme_dark")}</MenuItem>
+        <Select value={theme ?? THEME.LIGHT} onChange={handleChange} aria-labelledby={labelId}>
           <MenuItem value={THEME.LIGHT}>{t("prefs_appearance_theme_light")}</MenuItem>
+          <MenuItem value={THEME.DARK}>{t("prefs_appearance_theme_dark")}</MenuItem>
         </Select>
       </FormControl>
     </Pref>
@@ -515,6 +514,85 @@ const UserDialog = (props) => {
   );
 };
 
+const AccentColor = () => {
+  const { t } = useTranslation();
+  const accentColor = useLiveQuery(() => prefs.accentColor());
+  const customColor = useLiveQuery(() => prefs.customAccentColor());
+
+  const presets = [
+    { key: "earth", label: t("prefs_appearance_accent_earth", "Sand & Salbei"), light: "#C4A265", dark: "#8B9A6B" },
+    { key: "khaki", label: t("prefs_appearance_accent_khaki", "Khaki & Waldgruen"), light: "#B8A88A", dark: "#6B8E6B" },
+    { key: "olive", label: t("prefs_appearance_accent_olive", "Beige & Olive"), light: "#A89272", dark: "#7D8B69" },
+    { key: "gold", label: t("prefs_appearance_accent_gold", "Gold (Klassisch)"), light: "#FFD700", dark: "#FFD700" },
+  ];
+
+  const handlePresetClick = async (key) => {
+    await prefs.setAccentColor(key);
+  };
+
+  const handleCustomChange = async (ev) => {
+    await prefs.setCustomAccentColor(ev.target.value);
+    await prefs.setAccentColor("custom");
+  };
+
+  return (
+    <Pref
+      labelId="prefAccentColor"
+      title={t("prefs_appearance_accent_title", "Akzentfarbe")}
+      description={t("prefs_appearance_accent_description", "Waehle die primaere Akzentfarbe fuer Buttons, Chat-Bubbles und Hervorhebungen.")}
+    >
+      <Stack direction="row" spacing={1.5} sx={{ mt: 1, flexWrap: "wrap", alignItems: "center" }}>
+        {presets.map((p) => (
+          <Tooltip key={p.key} title={p.label}>
+            <IconButton
+              onClick={() => handlePresetClick(p.key)}
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: 0,
+                border: accentColor === p.key ? "3px solid var(--coop-black)" : "2px solid var(--coop-gray-400)",
+                boxShadow: accentColor === p.key ? "var(--coop-shadow-sm)" : "none",
+                background: `linear-gradient(135deg, ${p.light} 50%, ${p.dark} 50%)`,
+                "&:hover": { transform: "scale(1.1)" },
+              }}
+              aria-label={p.label}
+            />
+          </Tooltip>
+        ))}
+        <Tooltip title={t("prefs_appearance_accent_custom", "Eigene Farbe")}>
+          <IconButton
+            component="label"
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: 0,
+              border: accentColor === "custom" ? "3px solid var(--coop-black)" : "2px solid var(--coop-gray-400)",
+              boxShadow: accentColor === "custom" ? "var(--coop-shadow-sm)" : "none",
+              backgroundColor: customColor || "#C4A265",
+              overflow: "hidden",
+              "&:hover": { transform: "scale(1.1)" },
+            }}
+            aria-label={t("prefs_appearance_accent_custom", "Eigene Farbe")}
+          >
+            <input
+              type="color"
+              value={customColor || "#C4A265"}
+              onChange={handleCustomChange}
+              style={{
+                position: "absolute",
+                width: "100%",
+                height: "100%",
+                opacity: 0,
+                cursor: "pointer",
+              }}
+            />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+    </Pref>
+  );
+};
+
 const Appearance = () => {
   const { t } = useTranslation();
   return (
@@ -524,6 +602,7 @@ const Appearance = () => {
       </Typography>
       <PrefGroup>
         <Theme />
+        <AccentColor />
         <Language />
       </PrefGroup>
     </Card>

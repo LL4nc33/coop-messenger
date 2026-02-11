@@ -1,0 +1,23 @@
+# Coop Server Configuration
+# See https://docs.ntfy.sh/config/ for all options
+
+# Base URL (required for invite links and PWA)
+base-url: "http://localhost:9090"
+
+# Listen address
+listen-http: ":80"
+
+# Cache: Persistent storage for messages and invites
+cache-file: "/var/lib/coop/cache.db"
+cache-duration: "87600h"
+
+# Attachment settings (persistent)
+attachment-cache-dir: "/var/lib/coop/attachments"
+attachment-expiry-duration: "0"
+
+# Auth settings
+auth-file: "/var/lib/coop/user.db"
+auth-default-access: "deny-all"
+enable-login: true
+enable-signup: false
+require-login: true

@@ -1,6 +1,5 @@
 import {
   Alert,
-  AlertTitle,
   Badge,
   Box,
   Button,
@@ -15,40 +14,41 @@ import {
   ListItemText,
   ListSubheader,
   Portal,
-  Toolbar,
   Tooltip,
   Typography,
   useTheme,
 } from "@mui/material";
 import * as React from "react";
-import { useContext, useState } from "react";
+import { useContext, useState, useRef, useEffect, useCallback } from "react";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import Person from "@mui/icons-material/Person";
 import SettingsIcon from "@mui/icons-material/Settings";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import AddIcon from "@mui/icons-material/Add";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChatBubble, MoreVert, NotificationsOffOutlined, Send } from "@mui/icons-material";
+import { ChatBubble, Home, MoreVert, NotificationsOffOutlined, Close } from "@mui/icons-material";
 import ArticleIcon from "@mui/icons-material/Article";
 import { Trans, useTranslation } from "react-i18next";
 import CelebrationIcon from "@mui/icons-material/Celebration";
 import SubscribeDialog from "./SubscribeDialog";
-import { openUrl, topicDisplayName, topicUrl } from "../app/utils";
+import { formatShortDateTime, topicDisplayName, topicUrl } from "../app/utils";
 import routes from "./routes";
 import { ConnectionState } from "../app/Connection";
 import subscriptionManager from "../app/SubscriptionManager";
 import notifier from "../app/Notifier";
 import config from "../app/config";
 import session from "../app/Session";
-import accountApi, { Permission, Role } from "../app/AccountApi";
+import accountApi, { Role } from "../app/AccountApi";
 import UpgradeDialog from "./UpgradeDialog";
 import { AccountContext } from "./App";
-import { PermissionDenyAll, PermissionRead, PermissionReadWrite, PermissionWrite } from "./ReserveIcons";
 import { SubscriptionPopup } from "./SubscriptionPopup";
+import { useLiveQuery } from "dexie-react-hooks";
 import { useNotificationPermissionListener, useVersionChangeListener } from "./hooks";
 
 const navWidth = 280;
 
 const Navigation = (props) => {
+  const { t } = useTranslation();
   const navigationList = <NavList {...props} />;
   return (
     <Box component="nav" role="navigation" sx={{ width: { sm: Navigation.width }, flexShrink: { sm: 0 } }}>
@@ -58,12 +58,36 @@ const Navigation = (props) => {
         role="menubar"
         open={props.mobileDrawerOpen}
         onClose={props.onMobileDrawerToggle}
-        ModalProps={{ keepMounted: true }} // Better open performance on mobile.
+        ModalProps={{ keepMounted: true }}
         sx={{
+          zIndex: 1300,
           display: { xs: "block", sm: "none" },
           "& .MuiDrawer-paper": { boxSizing: "border-box", width: navWidth, backgroundImage: "none" },
         }}
       >
+        <Box sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          px: 2,
+          py: 1,
+          minHeight: 56,
+          borderBottom: "var(--coop-border)",
+          background: "var(--coop-accent)",
+        }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box
+              component="img"
+              src="/static/images/coop.png"
+              alt="Coop"
+              sx={{ width: 28, height: 28, imageRendering: "pixelated" }}
+            />
+            <Typography sx={{ fontFamily: "'Space Grotesk'", fontWeight: 800, fontSize: 18, color: "var(--coop-black)" }}>COOP</Typography>
+          </Box>
+          <IconButton onClick={props.onMobileDrawerToggle} aria-label={t("nav_button_close_menu", "Menue schliessen")}>
+            <Close />
+          </IconButton>
+        </Box>
         {navigationList}
       </Drawer>
       {/* Big screen drawer; persistent, shown if screen is big */}
@@ -105,7 +129,7 @@ const NavList = (props) => {
   };
 
   const handleSubscribeSubmit = (subscription) => {
-    console.log(`[Navigation] New subscription: ${subscription.id}`, subscription);
+    console.log(`[Navigation] New subscription added`);
     handleSubscribeReset();
     navigate(routes.forSubscription(subscription));
   };
@@ -114,6 +138,28 @@ const NavList = (props) => {
     accountApi.sync(); // Dangle!
     navigate(routes.account);
   };
+
+  const listRef = useRef(null);
+  const [indicatorStyle, setIndicatorStyle] = useState({ top: 0, height: 0, opacity: 0 });
+
+  const updateIndicator = useCallback(() => {
+    if (listRef.current) {
+      const selected = listRef.current.querySelector('.Mui-selected');
+      if (selected) {
+        setIndicatorStyle({
+          top: selected.offsetTop,
+          height: selected.offsetHeight,
+          opacity: 1,
+        });
+      } else {
+        setIndicatorStyle(prev => ({ ...prev, opacity: 0 }));
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    updateIndicator();
+  }, [props.selectedSubscription, location.pathname, updateIndicator]);
 
   const isAdmin = account?.role === Role.ADMIN;
   const isPaid = account?.billing?.subscription;
@@ -135,8 +181,39 @@ const NavList = (props) => {
 
   return (
     <>
-      <Toolbar sx={{ display: { xs: "none", sm: "block" } }} />
-      <List component="nav" sx={{ paddingTop: { xs: 0, sm: alertVisible ? 0 : "" } }}>
+      <Box sx={{
+        display: { xs: "none", sm: "flex" },
+        alignItems: "center",
+        gap: 1.5,
+        px: 2,
+        py: 1.5,
+        minHeight: 64,
+        borderBottom: "1px solid var(--coop-gray-200)",
+      }}>
+        <Box
+          component="img"
+          src="/static/images/coop.png"
+          alt="Coop"
+          sx={{ width: 32, height: 32, imageRendering: "pixelated" }}
+        />
+        <Typography sx={{ fontFamily: "'Space Grotesk'", fontWeight: 800, fontSize: 20, letterSpacing: "2px", color: "var(--coop-black)" }}>
+          COOP
+        </Typography>
+      </Box>
+      <List ref={listRef} component="nav" sx={{ paddingTop: { xs: 0, sm: alertVisible ? 0 : "" }, position: "relative" }}>
+        {/* Slide Indicator */}
+        <Box sx={{
+          position: "absolute",
+          left: 0,
+          width: 6,
+          top: indicatorStyle.top,
+          height: indicatorStyle.height,
+          opacity: indicatorStyle.opacity,
+          backgroundColor: "var(--coop-black)",
+          transition: "top 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s ease, opacity 0.15s ease",
+          zIndex: 1,
+          pointerEvents: "none",
+        }} />
         {versionChanged && <VersionUpdateBanner />}
         {showNotificationPermissionRequired && <NotificationPermissionRequired />}
         {showNotificationPermissionDenied && <NotificationPermissionDeniedAlert />}
@@ -147,17 +224,17 @@ const NavList = (props) => {
         {!showSubscriptionsList && (
           <ListItemButton onClick={() => navigate(routes.app)} selected={location.pathname === config.app_root}>
             <ListItemIcon>
-              <ChatBubble />
+              <Home />
             </ListItemIcon>
             <ListItemText primary={t("nav_button_all_notifications")} />
           </ListItemButton>
         )}
         {showSubscriptionsList && (
           <>
-            <ListSubheader>{t("nav_topics_title")}</ListSubheader>
+            <ListSubheader sx={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700 }}>{t("nav_topics_title")}</ListSubheader>
             <ListItemButton onClick={() => navigate(routes.app)} selected={location.pathname === config.app_root}>
               <ListItemIcon>
-                <ChatBubble />
+                <Home />
               </ListItemIcon>
               <ListItemText primary={t("nav_button_all_notifications")} />
             </ListItemButton>
@@ -173,30 +250,56 @@ const NavList = (props) => {
             <ListItemText primary={t("nav_button_account")} />
           </ListItemButton>
         )}
+        {account?.role === "admin" && (
+          <ListItemButton onClick={() => navigate(routes.admin)} selected={location.pathname === routes.admin}>
+            <ListItemIcon>
+              <AdminPanelSettingsIcon />
+            </ListItemIcon>
+            <ListItemText primary="Admin" />
+          </ListItemButton>
+        )}
         <ListItemButton onClick={() => navigate(routes.settings)} selected={location.pathname === routes.settings}>
           <ListItemIcon>
             <SettingsIcon />
           </ListItemIcon>
           <ListItemText primary={t("nav_button_settings")} />
         </ListItemButton>
-        <ListItemButton onClick={() => openUrl("/docs")}>
+        <ListItemButton onClick={() => navigate(routes.docs)} selected={location.pathname === routes.docs}>
           <ListItemIcon>
             <ArticleIcon />
           </ListItemIcon>
           <ListItemText primary={t("nav_button_documentation")} />
         </ListItemButton>
-        <ListItemButton onClick={() => props.onPublishMessageClick()}>
-          <ListItemIcon>
-            <Send />
-          </ListItemIcon>
-          <ListItemText primary={t("nav_button_publish_message")} />
-        </ListItemButton>
-        <ListItemButton onClick={() => setSubscribeDialogOpen(true)}>
-          <ListItemIcon>
-            <AddIcon />
-          </ListItemIcon>
-          <ListItemText primary={t("nav_button_subscribe")} />
-        </ListItemButton>
+        <Box sx={{ px: 1.5, py: 1 }}>
+          <Button
+            fullWidth
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setSubscribeDialogOpen(true)}
+            sx={{
+              backgroundColor: "var(--coop-accent)",
+              color: "var(--coop-black)",
+              border: "3px solid var(--coop-black)",
+              borderRadius: 0,
+              boxShadow: "var(--coop-shadow)",
+              fontWeight: 800,
+              textTransform: "uppercase",
+              letterSpacing: "0.05em",
+              py: 1.2,
+              "&:hover": {
+                backgroundColor: "var(--coop-accent-hover)",
+                boxShadow: "var(--coop-shadow-hover)",
+                transform: "translate(-2px, -2px)",
+              },
+              "&:active": {
+                boxShadow: "none",
+                transform: "translate(4px, 4px)",
+              },
+            }}
+          >
+            {t("nav_button_subscribe")}
+          </Button>
+        </Box>
         {showUpgradeBanner && (
           // The text background gradient didn't seem to do well with switching between light/dark mode,
           // So adding a `key` forces React to replace the entire component when the theme changes
@@ -288,7 +391,7 @@ const SubscriptionList = (props) => {
 };
 
 const SubscriptionItem = (props) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
 
@@ -305,6 +408,20 @@ const SubscriptionItem = (props) => {
       </Badge>
     );
 
+  // Letzte Nachricht fuer Vorschau laden
+  const lastNotification = useLiveQuery(
+    () => subscriptionManager.getNotifications(subscription.id).then((notifications) => {
+      const messages = notifications.filter((n) => n.event === "message");
+      return messages.length > 0 ? messages[0] : null;
+    }),
+    [subscription.id]
+  );
+
+  const previewText = lastNotification
+    ? `${lastNotification.sender ? lastNotification.sender + ": " : ""}${(lastNotification.message || "").substring(0, 40)}`
+    : null;
+  const timeText = lastNotification ? formatShortDateTime(lastNotification.time, i18n.language) : null;
+
   const handleClick = async () => {
     navigate(routes.forSubscription(subscription));
     await subscriptionManager.markNotificationsRead(subscription.id);
@@ -312,46 +429,49 @@ const SubscriptionItem = (props) => {
 
   return (
     <>
-      <ListItemButton onClick={handleClick} selected={props.selected} aria-label={ariaLabel} aria-live="polite">
-        <ListItemIcon>{icon}</ListItemIcon>
+      <ListItemButton onClick={handleClick} selected={props.selected} aria-label={ariaLabel} aria-live="polite" sx={{ alignItems: "flex-start", py: 1 }}>
+        <ListItemIcon sx={{ mt: 1 }}>{icon}</ListItemIcon>
         <ListItemText
-          primary={displayName}
-          primaryTypographyProps={{
-            style: { overflow: "hidden", textOverflow: "ellipsis" },
+          primary={
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  fontWeight: subscription.new > 0 ? 700 : 400,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  flexGrow: 1,
+                }}
+              >
+                {displayName}
+              </Typography>
+              {timeText && (
+                <Typography variant="caption" sx={{ ml: 1, flexShrink: 0, color: "text.secondary", fontFamily: "monospace", fontSize: "0.7rem" }}>
+                  {timeText}
+                </Typography>
+              )}
+            </Box>
+          }
+          secondary={previewText}
+          secondaryTypographyProps={{
+            sx: {
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              fontSize: "0.8rem",
+              color: "text.secondary",
+            },
           }}
         />
-        {subscription.reservation?.everyone && (
-          <ListItemIcon edge="end" sx={{ minWidth: "26px" }}>
-            {subscription.reservation?.everyone === Permission.READ_WRITE && (
-              <Tooltip title={t("prefs_reservations_table_everyone_read_write")}>
-                <PermissionReadWrite size="small" />
-              </Tooltip>
-            )}
-            {subscription.reservation?.everyone === Permission.READ_ONLY && (
-              <Tooltip title={t("prefs_reservations_table_everyone_read_only")}>
-                <PermissionRead size="small" />
-              </Tooltip>
-            )}
-            {subscription.reservation?.everyone === Permission.WRITE_ONLY && (
-              <Tooltip title={t("prefs_reservations_table_everyone_write_only")}>
-                <PermissionWrite size="small" />
-              </Tooltip>
-            )}
-            {subscription.reservation?.everyone === Permission.DENY_ALL && (
-              <Tooltip title={t("prefs_reservations_table_everyone_deny_all")}>
-                <PermissionDenyAll size="small" />
-              </Tooltip>
-            )}
-          </ListItemIcon>
-        )}
         {subscription.mutedUntil > 0 && (
-          <ListItemIcon edge="end" sx={{ minWidth: "26px" }} aria-label={t("nav_button_muted")}>
+          <ListItemIcon edge="end" sx={{ minWidth: "26px", mt: 1 }} aria-label={t("nav_button_muted")}>
             <Tooltip title={t("nav_button_muted")}>
-              <NotificationsOffOutlined />
+              <NotificationsOffOutlined fontSize="small" />
             </Tooltip>
           </ListItemIcon>
         )}
-        <ListItemIcon edge="end" sx={{ minWidth: "26px" }}>
+        <ListItemIcon edge="end" sx={{ minWidth: "26px", mt: 1 }}>
           <IconButton
             size="small"
             onMouseDown={(e) => e.stopPropagation()}
@@ -359,6 +479,7 @@ const SubscriptionItem = (props) => {
               e.stopPropagation();
               setMenuAnchorEl(e.currentTarget);
             }}
+            aria-label={t("nav_button_chat_options", "Chat-Optionen")}
           >
             <MoreVert fontSize="small" />
           </IconButton>
@@ -373,14 +494,15 @@ const SubscriptionItem = (props) => {
 
 const NotificationPermissionRequired = () => {
   const { t } = useTranslation();
+  const [dismissed, setDismissed] = useState(false);
   const requestPermission = async () => {
     await notifier.maybeRequestPermission();
   };
+  if (dismissed) return null;
   return (
-    <Alert severity="warning" sx={{ paddingTop: 2 }}>
-      <AlertTitle>{t("alert_notification_permission_required_title")}</AlertTitle>
-      <Typography gutterBottom>{t("alert_notification_permission_required_description")}</Typography>
-      <Button sx={{ float: "right" }} color="inherit" size="small" onClick={requestPermission}>
+    <Alert severity="warning" sx={{ py: 0.5 }} onClose={() => setDismissed(true)}>
+      <Typography variant="body2">{t("alert_notification_permission_required_description")}</Typography>
+      <Button color="inherit" size="small" onClick={requestPermission} sx={{ mt: 0.5 }}>
         {t("alert_notification_permission_required_button")}
       </Button>
     </Alert>
@@ -389,40 +511,44 @@ const NotificationPermissionRequired = () => {
 
 const NotificationPermissionDeniedAlert = () => {
   const { t } = useTranslation();
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
   return (
-    <Alert severity="warning" sx={{ paddingTop: 2 }}>
-      <AlertTitle>{t("alert_notification_permission_denied_title")}</AlertTitle>
-      <Typography gutterBottom>{t("alert_notification_permission_denied_description")}</Typography>
+    <Alert severity="warning" sx={{ py: 0.5 }} onClose={() => setDismissed(true)}>
+      <Typography variant="body2">{t("alert_notification_permission_denied_description")}</Typography>
     </Alert>
   );
 };
 
 const NotificationIOSInstallRequiredAlert = () => {
   const { t } = useTranslation();
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
   return (
-    <Alert severity="warning" sx={{ paddingTop: 2 }}>
-      <AlertTitle>{t("alert_notification_ios_install_required_title")}</AlertTitle>
-      <Typography gutterBottom>{t("alert_notification_ios_install_required_description")}</Typography>
+    <Alert severity="warning" sx={{ py: 0.5 }} onClose={() => setDismissed(true)}>
+      <Typography variant="body2">{t("alert_notification_ios_install_required_description")}</Typography>
     </Alert>
   );
 };
 
 const NotificationBrowserNotSupportedAlert = () => {
   const { t } = useTranslation();
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
   return (
-    <Alert severity="warning" sx={{ paddingTop: 2 }}>
-      <AlertTitle>{t("alert_not_supported_title")}</AlertTitle>
-      <Typography gutterBottom>{t("alert_not_supported_description")}</Typography>
+    <Alert severity="warning" sx={{ py: 0.5 }} onClose={() => setDismissed(true)}>
+      <Typography variant="body2">{t("alert_not_supported_description")}</Typography>
     </Alert>
   );
 };
 
 const NotificationContextNotSupportedAlert = () => {
   const { t } = useTranslation();
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
   return (
-    <Alert severity="warning" sx={{ paddingTop: 2 }}>
-      <AlertTitle>{t("alert_not_supported_title")}</AlertTitle>
-      <Typography gutterBottom>
+    <Alert severity="warning" sx={{ py: 0.5 }} onClose={() => setDismissed(true)}>
+      <Typography variant="body2">
         <Trans
           i18nKey="alert_not_supported_context_description"
           components={{
@@ -440,10 +566,9 @@ const VersionUpdateBanner = () => {
     window.location.reload();
   };
   return (
-    <Alert severity="info" sx={{ paddingTop: 2 }}>
-      <AlertTitle>{t("version_update_available_title")}</AlertTitle>
-      <Typography gutterBottom>{t("version_update_available_description")}</Typography>
-      <Button sx={{ float: "right" }} color="inherit" size="small" onClick={handleRefresh}>
+    <Alert severity="info" sx={{ py: 0.5 }}>
+      <Typography variant="body2">{t("version_update_available_description")}</Typography>
+      <Button color="inherit" size="small" onClick={handleRefresh} sx={{ mt: 0.5 }}>
         {t("common_refresh")}
       </Button>
     </Alert>

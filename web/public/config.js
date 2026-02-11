@@ -1,7 +1,7 @@
 // THIS FILE IS JUST AN EXAMPLE
 //
 // It is removed during the build process. The actual config is dynamically
-// generated server-side and served by the ntfy server.
+// generated server-side and served by the Coop server.
 //
 // During web development, you may change values here for rapid testing.
 

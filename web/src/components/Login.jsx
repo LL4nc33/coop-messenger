@@ -1,4 +1,3 @@
-import * as React from "react";
 import { useState } from "react";
 import { Typography, TextField, Button, Box, IconButton, InputAdornment } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
@@ -10,6 +9,25 @@ import AvatarBox from "./AvatarBox";
 import session from "../app/Session";
 import routes from "./routes";
 import { UnauthorizedError } from "../app/errors";
+
+const neoInputSx = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: 0,
+    border: "3px solid var(--coop-black)",
+    boxShadow: "var(--coop-shadow)",
+    "& fieldset": { border: "none" },
+    "&:hover": { boxShadow: "var(--coop-shadow-hover)" },
+    "&.Mui-focused": { boxShadow: "var(--coop-shadow-hover)" },
+  },
+  "& .MuiInputLabel-root": {
+    fontWeight: 600,
+  },
+  "& .MuiInputLabel-shrink": {
+    transform: "translate(14px, -9px) scale(0.75)",
+    backgroundColor: "var(--coop-bg)",
+    padding: "0 6px",
+  },
+};
 
 const Login = () => {
   const { t } = useTranslation();
@@ -23,13 +41,13 @@ const Login = () => {
     const user = { username, password };
     try {
       const token = await accountApi.login(user);
-      console.log(`[Login] User auth for user ${user.username} successful, token is ${token}`);
+      console.log(`[Login] User auth successful`);
       await session.store(user.username, token);
       window.location.href = routes.app;
     } catch (e) {
-      console.log(`[Login] User auth for user ${user.username} failed`, e);
+      console.log(`[Login] User auth failed`, e);
       if (e instanceof UnauthorizedError) {
-        setError(t("Login failed: Invalid username or password"));
+        setError(t("login_error_invalid_credentials", "Benutzername oder Passwort falsch"));
       } else {
         setError(e.message);
       }
@@ -44,8 +62,10 @@ const Login = () => {
   }
   return (
     <AvatarBox>
-      <Typography sx={{ typography: "h6" }}>{t("login_title")}</Typography>
-      <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+      <Typography sx={{ typography: "h6", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700 }}>
+        {t("login_title")}
+      </Typography>
+      <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1, width: "100%" }}>
         <TextField
           margin="dense"
           required
@@ -53,9 +73,11 @@ const Login = () => {
           id="username"
           label={t("signup_form_username")}
           name="username"
+          variant="outlined"
           value={username}
           onChange={(ev) => setUsername(ev.target.value.trim())}
           autoFocus
+          sx={neoInputSx}
         />
         <TextField
           margin="dense"
@@ -65,9 +87,11 @@ const Login = () => {
           label={t("signup_form_password")}
           type={showPassword ? "text" : "password"}
           id="password"
+          variant="outlined"
           value={password}
           onChange={(ev) => setPassword(ev.target.value.trim())}
           autoComplete="current-password"
+          sx={neoInputSx}
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
@@ -83,7 +107,37 @@ const Login = () => {
             ),
           }}
         />
-        <Button type="submit" fullWidth variant="contained" disabled={username === "" || password === ""} sx={{ mt: 2, mb: 2 }}>
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          disabled={username === "" || password === ""}
+          sx={{
+            mt: 2,
+            mb: 2,
+            borderRadius: 0,
+            border: "3px solid var(--coop-black)",
+            boxShadow: "var(--coop-shadow)",
+            backgroundColor: "var(--coop-accent)",
+            color: "var(--coop-black)",
+            fontWeight: 700,
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: "1rem",
+            "&:hover": {
+              backgroundColor: "var(--coop-accent-hover)",
+              boxShadow: "var(--coop-shadow-hover)",
+            },
+            "&:active": {
+              boxShadow: "none",
+              transform: "translate(2px, 2px)",
+            },
+            "&.Mui-disabled": {
+              border: "3px solid var(--coop-gray-400)",
+              backgroundColor: "var(--coop-gray-200)",
+              boxShadow: "2px 2px 0px var(--coop-gray-400)",
+            },
+          }}
+        >
           {t("login_form_button_submit")}
         </Button>
         {error && (
@@ -100,7 +154,6 @@ const Login = () => {
           </Box>
         )}
         <Box sx={{ width: "100%" }}>
-          {/* This is where the password reset link would go */}
           {config.enable_signup && (
             <div style={{ float: "right" }}>
               <NavLink to={routes.signup} variant="body1">

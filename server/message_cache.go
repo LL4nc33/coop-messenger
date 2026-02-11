@@ -48,6 +48,7 @@ const (
 			attachment_url TEXT NOT NULL,
 			attachment_deleted INT NOT NULL,
 			sender TEXT NOT NULL,
+			sender_name TEXT NOT NULL,
 			user TEXT NOT NULL,
 			content_type TEXT NOT NULL,
 			encoding TEXT NOT NULL,
@@ -66,11 +67,31 @@ const (
 			value INT
 		);
 		INSERT INTO stats (key, value) VALUES ('messages', 0);
+		CREATE TABLE IF NOT EXISTS invites (
+			token TEXT PRIMARY KEY,
+			created_by TEXT NOT NULL,
+			topics TEXT NOT NULL DEFAULT '',
+			max_uses INTEGER NOT NULL DEFAULT 1,
+			used_count INTEGER NOT NULL DEFAULT 0,
+			expires_at INTEGER NOT NULL DEFAULT 0,
+			created_at INTEGER NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS join_requests (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT NOT NULL,
+			topic TEXT NOT NULL,
+			status TEXT NOT NULL DEFAULT 'pending',
+			created_at INTEGER NOT NULL,
+			resolved_at INTEGER NOT NULL DEFAULT 0,
+			resolved_by TEXT NOT NULL DEFAULT '',
+			UNIQUE(username, topic)
+		);
+		CREATE INDEX IF NOT EXISTS idx_join_requests_status ON join_requests (status);
 		COMMIT;
 	`
 	insertMessageQuery = `
-		INSERT INTO messages (mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, attachment_deleted, sender, user, content_type, encoding, published)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO messages (mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, attachment_deleted, sender, sender_name, user, content_type, encoding, published)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	deleteMessageQuery                    = `DELETE FROM messages WHERE mid = ?`
 	selectScheduledMessageIDsBySeqIDQuery = `SELECT mid FROM messages WHERE topic = ? AND sequence_id = ? AND published = 0`
@@ -78,43 +99,43 @@ const (
 	updateMessagesForTopicExpiryQuery     = `UPDATE messages SET expires = ? WHERE topic = ?`
 	selectRowIDFromMessageID              = `SELECT id FROM messages WHERE mid = ?` // Do not include topic, see #336 and TestServer_PollSinceID_MultipleTopics
 	selectMessagesByIDQuery               = `
-		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, sender_name, user, content_type, encoding
 		FROM messages
 		WHERE mid = ?
 	`
 	selectMessagesSinceTimeQuery = `
-		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, sender_name, user, content_type, encoding
 		FROM messages
 		WHERE topic = ? AND time >= ? AND published = 1
 		ORDER BY time, id
 	`
 	selectMessagesSinceTimeIncludeScheduledQuery = `
-		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, sender_name, user, content_type, encoding
 		FROM messages
 		WHERE topic = ? AND time >= ?
 		ORDER BY time, id
 	`
 	selectMessagesSinceIDQuery = `
-		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, sender_name, user, content_type, encoding
 		FROM messages
 		WHERE topic = ? AND id > ? AND published = 1
 		ORDER BY time, id
 	`
 	selectMessagesSinceIDIncludeScheduledQuery = `
-		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, sender_name, user, content_type, encoding
 		FROM messages
 		WHERE topic = ? AND (id > ? OR published = 0)
 		ORDER BY time, id
 	`
 	selectMessagesLatestQuery = `
-		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, sender_name, user, content_type, encoding
 		FROM messages
 		WHERE topic = ? AND published = 1
 		ORDER BY time DESC, id DESC
 		LIMIT 1
 	`
 	selectMessagesDueQuery = `
-		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, sender_name, user, content_type, encoding
 		FROM messages
 		WHERE time <= ? AND published = 0
 		ORDER BY time, id
@@ -124,6 +145,9 @@ const (
 	selectMessagesCountQuery        = `SELECT COUNT(*) FROM messages`
 	selectMessageCountPerTopicQuery = `SELECT topic, COUNT(*) FROM messages GROUP BY topic`
 	selectTopicsQuery               = `SELECT topic FROM messages GROUP BY topic`
+	selectTopicStatsQuery           = `SELECT topic, COUNT(*) as count, MAX(time) as last_activity FROM messages GROUP BY topic ORDER BY last_activity DESC`
+	selectMessageIDsByTopicQuery    = `SELECT mid FROM messages WHERE topic = ?`
+	deleteMessagesByTopicQuery      = `DELETE FROM messages WHERE topic = ?`
 
 	updateAttachmentDeleted            = `UPDATE messages SET attachment_deleted = 1 WHERE mid = ?`
 	selectAttachmentsExpiredQuery      = `SELECT mid FROM messages WHERE attachment_expires > 0 AND attachment_expires <= ? AND attachment_deleted = 0`
@@ -136,7 +160,7 @@ const (
 
 // Schema management queries
 const (
-	currentSchemaVersion          = 14
+	currentSchemaVersion          = 16
 	createSchemaVersionTableQuery = `
 		CREATE TABLE IF NOT EXISTS schemaVersion (
 			id INT PRIMARY KEY,
@@ -272,6 +296,35 @@ const (
 		ALTER TABLE messages ADD COLUMN event TEXT NOT NULL DEFAULT('message');
 		CREATE INDEX IF NOT EXISTS idx_sequence_id ON messages (sequence_id);
 	`
+
+	// 14 -> 15 (Coop: Add sender_name column + invites table)
+	migrate14To15AlterMessagesTableQuery = `
+		ALTER TABLE messages ADD COLUMN sender_name TEXT NOT NULL DEFAULT('');
+	`
+	migrate14To15CreateInvitesTableQuery = `
+		CREATE TABLE IF NOT EXISTS invites (
+			token TEXT PRIMARY KEY,
+			created_by TEXT NOT NULL,
+			topics TEXT NOT NULL DEFAULT '',
+			max_uses INTEGER NOT NULL DEFAULT 1,
+			used_count INTEGER NOT NULL DEFAULT 0,
+			expires_at INTEGER NOT NULL DEFAULT 0,
+			created_at INTEGER NOT NULL
+		);
+	`
+	migrate15To16CreateJoinRequestsTableQuery = `
+		CREATE TABLE IF NOT EXISTS join_requests (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT NOT NULL,
+			topic TEXT NOT NULL,
+			status TEXT NOT NULL DEFAULT 'pending',
+			created_at INTEGER NOT NULL,
+			resolved_at INTEGER NOT NULL DEFAULT 0,
+			resolved_by TEXT NOT NULL DEFAULT '',
+			UNIQUE(username, topic)
+		);
+		CREATE INDEX IF NOT EXISTS idx_join_requests_status ON join_requests (status);
+	`
 )
 
 var (
@@ -290,6 +343,8 @@ var (
 		11: migrateFrom11,
 		12: migrateFrom12,
 		13: migrateFrom13,
+		14: migrateFrom14,
+		15: migrateFrom15,
 	}
 )
 
@@ -429,6 +484,7 @@ func (c *messageCache) addMessages(ms []*message) error {
 			attachmentURL,
 			attachmentDeleted, // Always zero
 			sender,
+			m.SenderName,
 			m.User,
 			m.ContentType,
 			m.Encoding,
@@ -591,6 +647,71 @@ func (c *messageCache) Topics() (map[string]*topic, error) {
 		return nil, err
 	}
 	return topics, nil
+}
+
+// TopicStats represents message statistics for a single topic
+type TopicStats struct {
+	Topic        string
+	MessageCount int
+	LastActivity int64
+}
+
+// TopicStats returns message count and last activity for all topics, sorted by last activity descending
+func (c *messageCache) TopicStats() ([]TopicStats, error) {
+	rows, err := c.db.Query(selectTopicStatsQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	stats := make([]TopicStats, 0)
+	for rows.Next() {
+		var s TopicStats
+		if err := rows.Scan(&s.Topic, &s.MessageCount, &s.LastActivity); err != nil {
+			return nil, err
+		}
+		stats = append(stats, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return stats, nil
+}
+
+// DeleteMessagesByTopic deletes all messages for a topic and returns their message IDs (for attachment cleanup)
+func (c *messageCache) DeleteMessagesByTopic(topic string) ([]string, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	tx, err := c.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	// First, get the message IDs for attachment cleanup
+	rows, err := tx.Query(selectMessageIDsByTopicQuery, topic)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	ids := make([]string, 0)
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	// Then delete all messages for the topic
+	if _, err := tx.Exec(deleteMessagesByTopicQuery, topic); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return ids, nil
 }
 
 func (c *messageCache) DeleteMessages(ids ...string) error {
@@ -759,7 +880,7 @@ func readMessages(rows *sql.Rows) ([]*message, error) {
 func readMessage(rows *sql.Rows) (*message, error) {
 	var timestamp, expires, attachmentSize, attachmentExpires int64
 	var priority int
-	var id, sequenceID, event, topic, msg, title, tagsStr, click, icon, actionsStr, attachmentName, attachmentType, attachmentURL, sender, user, contentType, encoding string
+	var id, sequenceID, event, topic, msg, title, tagsStr, click, icon, actionsStr, attachmentName, attachmentType, attachmentURL, sender, senderName, user, contentType, encoding string
 	err := rows.Scan(
 		&id,
 		&sequenceID,
@@ -780,6 +901,7 @@ func readMessage(rows *sql.Rows) (*message, error) {
 		&attachmentExpires,
 		&attachmentURL,
 		&sender,
+		&senderName,
 		&user,
 		&contentType,
 		&encoding,
@@ -826,6 +948,7 @@ func readMessage(rows *sql.Rows) (*message, error) {
 		Icon:        icon,
 		Actions:     actions,
 		Attachment:  att,
+		SenderName:  senderName,
 		Sender:      senderIP, // Must parse assuming database must be correct
 		User:        user,
 		ContentType: contentType,
@@ -853,6 +976,11 @@ func (c *messageCache) Stats() (messages int64, err error) {
 		return 0, err
 	}
 	return messages, nil
+}
+
+// DB returns the underlying sql.DB for direct access (used by invite system)
+func (c *messageCache) DB() *sql.DB {
+	return c.db
 }
 
 func (c *messageCache) Close() error {
@@ -1098,6 +1226,41 @@ func migrateFrom13(db *sql.DB, _ time.Duration) error {
 		return err
 	}
 	if _, err := tx.Exec(updateSchemaVersion, 14); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func migrateFrom14(db *sql.DB, _ time.Duration) error {
+	log.Tag(tagMessageCache).Info("Migrating cache database schema: from 14 to 15")
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(migrate14To15AlterMessagesTableQuery); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(migrate14To15CreateInvitesTableQuery); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(updateSchemaVersion, 15); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func migrateFrom15(db *sql.DB, _ time.Duration) error {
+	log.Tag(tagMessageCache).Info("Migrating cache database schema: from 15 to 16")
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(migrate15To16CreateJoinRequestsTableQuery); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(updateSchemaVersion, 16); err != nil {
 		return err
 	}
 	return tx.Commit()

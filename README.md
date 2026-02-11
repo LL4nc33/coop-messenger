@@ -1,277 +1,222 @@
-<div align="center" markdown="1">
-<sup>Special thanks to:</sup>
-<br>
-<br>
-<a href="https://go.warp.dev/ntfy">
-  <img alt="Warp sponsorship" width="400" src="https://raw.githubusercontent.com/warpdotdev/brand-assets/refs/heads/main/Github/Sponsor/Warp-Github-LG-02.png">
-</a>
+<div align="center">
 
-### [Warp, built for coding with multiple AI agents.](https://go.warp.dev/ntfy)
-[Available for MacOS, Linux, & Windows](https://go.warp.dev/ntfy)<br>
+<img src="web/public/static/images/coop.png" width="100" alt="Coop Logo" style="image-rendering: pixelated;">
+
+# Coop Messenger
+
+**A self-hosted, cooperative messenger built for real conversations.**
+
+Your server. Your rules. Your messages.
+
+[![Version](https://img.shields.io/badge/version-0.4.0--beta-orange)](https://github.com/LL4nc33/coop-messenger/releases)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+[![Based on ntfy](https://img.shields.io/badge/based_on-ntfy_v2.17.0-green)](https://github.com/binwiederhier/ntfy)
+[![Go](https://img.shields.io/badge/Go-1.24-00ADD8?logo=go)](https://go.dev)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker)](https://docs.docker.com/compose/)
+[![AI-Assisted](https://img.shields.io/badge/AI--Assisted-Claude_Code-blueviolet)](https://claude.ai)
+
 </div>
-<hr>
 
-![ntfy](web/public/static/images/ntfy.png)
+---
 
-# ntfy.sh | Send push notifications to your phone or desktop via PUT/POST
-[![Release](https://img.shields.io/github/release/binwiederhier/ntfy.svg?color=success&style=flat-square)](https://github.com/binwiederhier/ntfy/releases/latest)
-[![Go Reference](https://pkg.go.dev/badge/heckel.io/ntfy.svg)](https://pkg.go.dev/heckel.io/ntfy/v2)
-[![Tests](https://github.com/binwiederhier/ntfy/workflows/test/badge.svg)](https://github.com/binwiederhier/ntfy/actions)
-[![Go Report Card](https://goreportcard.com/badge/github.com/binwiederhier/ntfy)](https://goreportcard.com/report/github.com/binwiederhier/ntfy)
-[![codecov](https://codecov.io/gh/binwiederhier/ntfy/branch/main/graph/badge.svg?token=A597KQ463G)](https://codecov.io/gh/binwiederhier/ntfy)
-[![Discord](https://img.shields.io/discord/874398661709295626?label=Discord)](https://discord.gg/cT7ECsZj9w)
-[![Matrix](https://img.shields.io/matrix/ntfy:matrix.org?label=Matrix)](https://matrix.to/#/#ntfy:matrix.org)
-[![Matrix space](https://img.shields.io/matrix/ntfy-space:matrix.org?label=Matrix+space)](https://matrix.to/#/#ntfy-space:matrix.org)
-[![Healthcheck](https://healthchecks.io/badge/68b65976-b3b0-4102-aec9-980921/kcoEgrLY.svg)](https://ntfy.statuspage.io/)
-[![Gitpod](https://img.shields.io/badge/Contribute%20with-Gitpod-908a85?logo=gitpod)](https://gitpod.io/#https://github.com/binwiederhier/ntfy)
+Coop is a private messenger you host yourself. Built as a fork of the excellent [ntfy](https://github.com/binwiederhier/ntfy), Coop transforms the pub-sub notification engine into a full messaging experience with a modern UI, invite system, and admin controls.
 
-**ntfy** (pronounced "*notify*") is a simple HTTP-based [pub-sub](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern) 
-notification service. With ntfy, you can **send notifications to your phone or desktop via scripts** from any computer, 
-**without having to sign up or pay any fees**. If you'd like to run your own instance of the service, you can easily do 
-so since ntfy is open source.
+> **Why "Coop"?** Short for *cooperative*. The idea is simple: messaging should be a shared, cooperative effort -- not controlled by a single corporation. You run the server, you own the data, and everyone cooperates on the same platform.
 
-You can access the free version of ntfy at **[ntfy.sh](https://ntfy.sh)**. There is also an [open-source Android app](https://github.com/binwiederhier/ntfy-android)
-available on [Google Play](https://play.google.com/store/apps/details?id=io.heckel.ntfy) or [F-Droid](https://f-droid.org/en/packages/io.heckel.ntfy/),
-as well as an [open source iOS app](https://github.com/binwiederhier/ntfy-ios) available on the [App Store](https://apps.apple.com/us/app/ntfy/id1625396347).
+> **Built with AI.** Coop is developed AI-assisted using [Claude Code](https://claude.ai/claude-code). The architecture decisions, code, UI design, and documentation are a collaboration between a human developer and AI. We believe this is the future of open-source development.
 
-<p>
-  <a href="https://play.google.com/store/apps/details?id=io.heckel.ntfy"><img height="50" src="docs/static/img/badge-googleplay.png"></a>
-  <a href="https://f-droid.org/en/packages/io.heckel.ntfy/"><img width="170" src="docs/static/img/badge-fdroid.svg"></a>
-  <a href="https://apps.apple.com/us/app/ntfy/id1625396347"><img height="50" src="docs/static/img/badge-appstore.png"></a>
+## Screenshots
+
+<p align="center">
+  <img src=".github/images/coop-desktop-light.png" width="45%" alt="Coop Desktop Light Mode">
+  <img src=".github/images/coop-desktop-dark.png" width="45%" alt="Coop Desktop Dark Mode">
+</p>
+<p align="center">
+  <img src=".github/images/coop-mobile-closed.png" width="20%" alt="Coop Mobile">
+  <img src=".github/images/coop-admin-light.png" width="35%" alt="Coop Admin Panel">
+  <img src=".github/images/admin-invites-desktop.png" width="35%" alt="Coop Invites">
 </p>
 
-<p>
-  <img src=".github/images/screenshot-curl.png" height="180">
-  <img src=".github/images/screenshot-web-detail.png" height="180">
-  <img src=".github/images/screenshot-phone-main.jpg" height="180">
-  <img src=".github/images/screenshot-phone-detail.jpg" height="180">
-  <img src=".github/images/screenshot-phone-notification.jpg" height="180">
-</p>
+## Features
 
-## [ntfy Pro](https://ntfy.sh/app) 💸 🎉
-I now offer paid plans for [ntfy.sh](https://ntfy.sh/) if you don't want to self-host, or you want to support the development of 
-ntfy (→ [Purchase via web app](https://ntfy.sh/app)). You can **buy a plan for as low as $5/month**.
-You can also donate via [GitHub Sponsors](https://github.com/sponsors/binwiederhier), and [Liberapay](https://liberapay.com/ntfy).
-I would be very humbled by your sponsorship. ❤️ 
+- **Real-time messaging** -- Send and receive messages instantly via WebSocket/SSE
+- **Invite system** -- Create invite links to onboard new users or add existing users to chats
+- **Join requests** -- Users can request access to chats; admins approve or deny
+- **Neobrutalism UI** -- A distinctive design with bold borders, accent colors, and a dark mode
+- **Mobile-first PWA** -- Installable as a Progressive Web App on any device
+- **Admin panel** -- Manage users, chats, invites, and join requests from the browser
+- **Invite-only by default** -- `auth-default-access: deny-all` keeps your instance private
+- **File attachments** -- Share files and images within chats
+- **Notification control** -- Mute chats, own messages don't trigger notifications
+- **Theme customization** -- Light/dark mode with configurable accent colors
+- **Share chat IDs** -- Users can share their chat ID via native share or clipboard
+- **ntfy-compatible API** -- Works with existing [ntfy Android](https://github.com/binwiederhier/ntfy-android) and [iOS](https://github.com/binwiederhier/ntfy-ios) apps
 
-## **[Documentation](https://ntfy.sh/docs/)**
+## Quick Start
 
-[Getting started](https://ntfy.sh/docs/) |
-[Android/iOS](https://ntfy.sh/docs/subscribe/phone/) |
-[API](https://ntfy.sh/docs/publish/) |
-[Install / Self-hosting](https://ntfy.sh/docs/install/) |
-[Building](https://ntfy.sh/docs/develop/)
+### Docker Compose (recommended)
 
-## Chat/forum
-There are a few ways to get in touch with me and/or the rest of the community. Feel free to use any of these methods. Whatever
-works best for you:
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/LL4nc33/coop-messenger.git
+   cd coop-messenger
+   ```
 
-* [Discord server](https://discord.gg/cT7ECsZj9w) - direct chat with the community
-* [Matrix room #ntfy](https://matrix.to/#/#ntfy:matrix.org) (+ [Matrix space](https://matrix.to/#/#ntfy-space:matrix.org)) - same chat, bridged from Discord
-* [GitHub issues](https://github.com/binwiederhier/ntfy/issues) - questions, features, bugs
+2. **Configure the server:**
+   ```bash
+   # Edit config/server.yml to set your domain
+   # At minimum, change base-url to your server's address
+   nano config/server.yml
+   ```
 
-## Announcements/beta testers
-For announcements of new releases and cutting-edge beta versions, please subscribe to the [ntfy.sh/announcements](https://ntfy.sh/announcements) 
-topic. If you'd like to test the iOS app, join [TestFlight](https://testflight.apple.com/join/P1fFnAm9). For Android betas,
-join Discord/Matrix (I'll eventually make a testing channel in Google Play).
+3. **Build and start:**
+   ```bash
+   docker compose up -d --build
+   ```
 
-## Sponsors
-If you'd like to support the ntfy maintainers, please consider donating to [GitHub Sponsors](https://github.com/sponsors/binwiederhier) or
-and [Liberapay](https://liberapay.com/ntfy). We would be humbled if you helped carry the server and developer 
-account costs. Even small donations are very much appreciated. 
+4. **Create an admin user:**
+   ```bash
+   docker exec -it coop ntfy user add --role=admin admin
+   ```
 
-Thank you to our commercial sponsors, who help keep the service running and the development going:
+5. **Open the app:**
+   Navigate to `http://localhost:9090` and log in with your admin account.
 
-<a href="https://m.do.co/c/442b929528db"><img src="https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/SVG/DO_Logo_horizontal_blue.svg" width="201px"></a>
+### Configuration
 
-<a href="https://www.magicbell.com/?utm_source=ntfy"><img src="assets/sponsors/magicbell.png" width="180px"></a>
+The server is configured via `config/server.yml`:
 
-<a href="https://go.warp.dev/ntfy"><img src="https://raw.githubusercontent.com/warpdotdev/brand-assets/refs/heads/main/Logos/Warp-Wordmark-Black.png" width="160px"></a>
+```yaml
+# Your server's public URL (required for invite links)
+base-url: "https://chat.yourdomain.com"
 
-And a big fat **Thank You** to the individuals who have sponsored ntfy in the past, or are still sponsoring ntfy:
+# Listen address (container-internal)
+listen-http: ":80"
 
-<a href="https://github.com/neutralinsomniac"><img src="https://github.com/neutralinsomniac.png" width="40px" /></a>
-<a href="https://github.com/aspyct"><img src="https://github.com/aspyct.png" width="40px" /></a>
-<a href="https://github.com/nickexyz"><img src="https://github.com/nickexyz.png" width="40px" /></a>
-<a href="https://github.com/qcasey"><img src="https://github.com/qcasey.png" width="40px" /></a>
-<a href="https://github.com/mckay115"><img src="https://github.com/mckay115.png" width="40px" /></a>
-<a href="https://github.com/Salamafet"><img src="https://github.com/Salamafet.png" width="40px" /></a>
-<a href="https://github.com/codinghipster"><img src="https://github.com/codinghipster.png" width="40px" /></a>
-<a href="https://github.com/HinFort"><img src="https://github.com/HinFort.png" width="40px" /></a>
-<a href="https://github.com/Lexevolution"><img src="https://github.com/Lexevolution.png" width="40px" /></a>
-<a href="https://github.com/johnnyip"><img src="https://github.com/johnnyip.png" width="40px" /></a>
-<a href="https://github.com/JonDerThan"><img src="https://github.com/JonDerThan.png" width="40px" /></a>
-<a href="https://github.com/12nick12"><img src="https://github.com/12nick12.png" width="40px" /></a>
-<a href="https://github.com/eanplatter"><img src="https://github.com/eanplatter.png" width="40px" /></a>
-<a href="https://github.com/fnoelscher"><img src="https://github.com/fnoelscher.png" width="40px" /></a>
-<a href="https://github.com/bnorick"><img src="https://github.com/bnorick.png" width="40px" /></a>
-<a href="https://github.com/snh"><img src="https://github.com/snh.png" width="40px" /></a>
-<a href="https://github.com/hen-x"><img src="https://github.com/hen-x.png" width="40px" /></a>
-<a href="https://github.com/JamieGoodson"><img src="https://github.com/JamieGoodson.png" width="40px" /></a>
-<a href="https://github.com/cremesk"><img src="https://github.com/cremesk.png" width="40px" /></a>
-<a href="https://github.com/dangowans"><img src="https://github.com/dangowans.png" width="40px" /></a>
-<a href="https://github.com/mnault"><img src="https://github.com/mnault.png" width="40px" /></a>
-<a href="https://github.com/nwithan8"><img src="https://github.com/nwithan8.png" width="40px" /></a>
-<a href="https://github.com/peterleiser"><img src="https://github.com/peterleiser.png" width="40px" /></a>
-<a href="https://github.com/portothree"><img src="https://github.com/portothree.png" width="40px" /></a>
-<a href="https://github.com/finngreig"><img src="https://github.com/finngreig.png" width="40px" /></a>
-<a href="https://github.com/skrollme"><img src="https://github.com/skrollme.png" width="40px" /></a>
-<a href="https://github.com/gergepalfi"><img src="https://github.com/gergepalfi.png" width="40px" /></a>
-<a href="https://github.com/tonyakwei"><img src="https://github.com/tonyakwei.png" width="40px" /></a>
-<a href="https://github.com/crosbyh"><img src="https://github.com/crosbyh.png" width="40px" /></a>
-<a href="https://github.com/mdlnr"><img src="https://github.com/mdlnr.png" width="40px" /></a>
-<a href="https://github.com/p-samuel"><img src="https://github.com/p-samuel.png" width="40px" /></a>
-<a href="https://github.com/zugaldia"><img src="https://github.com/zugaldia.png" width="40px" /></a>
-<a href="https://github.com/NathanSweet"><img src="https://github.com/NathanSweet.png" width="40px" /></a>
-<a href="https://github.com/msdeibel"><img src="https://github.com/msdeibel.png" width="40px" /></a>
-<a href="https://github.com/ksurl"><img src="https://github.com/ksurl.png" width="40px" /></a>
-<a href="https://github.com/CodingTimeDEV"><img src="https://github.com/CodingTimeDEV.png" width="40px" /></a>
-<a href="https://github.com/Terrormixer3000"><img src="https://github.com/Terrormixer3000.png" width="40px" /></a>
-<a href="https://github.com/voroskoi"><img src="https://github.com/voroskoi.png" width="40px" /></a>
-<a href="https://github.com/Nickwasused"><img src="https://github.com/Nickwasused.png" width="40px" /></a>
-<a href="https://github.com/bahur142"><img src="https://github.com/bahur142.png" width="40px" /></a>
-<a href="https://github.com/vinhdizzo"><img src="https://github.com/vinhdizzo.png" width="40px" /></a>
-<a href="https://github.com/Ge0rg3"><img src="https://github.com/Ge0rg3.png" width="40px" /></a>
-<a href="https://github.com/biopsin"><img src="https://github.com/biopsin.png" width="40px" /></a>
-<a href="https://github.com/thebino"><img src="https://github.com/thebino.png" width="40px" /></a>
-<a href="https://github.com/sky4055"><img src="https://github.com/sky4055.png" width="40px" /></a>
-<a href="https://github.com/julianlam"><img src="https://github.com/julianlam.png" width="40px" /></a>
-<a href="https://github.com/andreapx"><img src="https://github.com/andreapx.png" width="40px" /></a>
-<a href="https://github.com/billycao"><img src="https://github.com/billycao.png" width="40px" /></a>
-<a href="https://github.com/zoic21"><img src="https://github.com/zoic21.png" width="40px" /></a>
-<a href="https://github.com/IanKulin"><img src="https://github.com/IanKulin.png" width="40px" /></a>
-<a href="https://github.com/Joachim256"><img src="https://github.com/Joachim256.png" width="40px" /></a>
-<a href="https://github.com/overtone1000"><img src="https://github.com/overtone1000.png" width="40px" /></a>
-<a href="https://github.com/oakd"><img src="https://github.com/oakd.png" width="40px" /></a>
-<a href="https://github.com/KucharczykL"><img src="https://github.com/KucharczykL.png" width="40px" /></a>
-<a href="https://github.com/hansbickhofe"><img src="https://github.com/hansbickhofe.png" width="40px" /></a>
-<a href="https://github.com/caseodilla"><img src="https://github.com/caseodilla.png" width="40px" /></a>
-<a href="https://github.com/0xAF"><img src="https://github.com/0xAF.png" width="40px" /></a>
-<a href="https://github.com/soonoo"><img src="https://github.com/soonoo.png" width="40px" /></a>
-<a href="https://github.com/nichu42"><img src="https://github.com/nichu42.png" width="40px" /></a>
-<a href="https://github.com/samliebow"><img src="https://github.com/samliebow.png" width="40px" /></a>
-<a href="https://github.com/johman10"><img src="https://github.com/johman10.png" width="40px" /></a>
-<a href="https://github.com/R-Gld"><img src="https://github.com/R-Gld.png" width="40px" /></a>
-<a href="https://github.com/FingerlessGlov3s"><img src="https://github.com/FingerlessGlov3s.png" width="40px" /></a>
-<a href="https://github.com/Twisterado"><img src="https://github.com/Twisterado.png" width="40px" /></a>
-<a href="https://github.com/ScrumpyJack"><img src="https://github.com/ScrumpyJack.png" width="40px" /></a>
-<a href="https://github.com/andrejarrell"><img src="https://github.com/andrejarrell.png" width="40px" /></a>
-<a href="https://github.com/oaustegard"><img src="https://github.com/oaustegard.png" width="40px" /></a>
-<a href="https://github.com/CreativeWarlock"><img src="https://github.com/CreativeWarlock.png" width="40px" /></a>
-<a href="https://github.com/darkdragon-001"><img src="https://github.com/darkdragon-001.png" width="40px" /></a>
-<a href="https://github.com/jonathan-kosgei"><img src="https://github.com/jonathan-kosgei.png" width="40px" /></a>
-<a href="https://github.com/KevinWang15"><img src="https://github.com/KevinWang15.png" width="40px" /></a>
-<a href="https://github.com/darkmattercoder"><img src="https://github.com/darkmattercoder.png" width="40px" /></a>
-<a href="https://github.com/bmcgonag"><img src="https://github.com/bmcgonag.png" width="40px" /></a>
-<a href="https://github.com/skorokithakis"><img src="https://github.com/skorokithakis.png" width="40px" /></a>
-<a href="https://github.com/eenturk"><img src="https://github.com/eenturk.png" width="40px" /></a>
-<a href="https://github.com/spirossi"><img src="https://github.com/spirossi.png" width="40px" /></a>
-<a href="https://github.com/teomarcdhio"><img src="https://github.com/teomarcdhio.png" width="40px" /></a>
-<a href="https://github.com/MarcMichalsky"><img src="https://github.com/MarcMichalsky.png" width="40px" /></a>
-<a href="https://github.com/LuckVintage"><img src="https://github.com/LuckVintage.png" width="40px" /></a>
-<a href="https://github.com/spartan"><img src="https://github.com/spartan.png" width="40px" /></a>
-<a href="https://github.com/alexandzors"><img src="https://github.com/alexandzors.png" width="40px" /></a>
-<a href="https://github.com/dkramer95"><img src="https://github.com/dkramer95.png" width="40px" /></a>
-<a href="https://github.com/YezGotIt"><img src="https://github.com/YezGotIt.png" width="40px" /></a>
-<a href="https://github.com/thomasskou"><img src="https://github.com/thomasskou.png" width="40px" /></a>
-<a href="https://github.com/surfernv"><img src="https://github.com/surfernv.png" width="40px" /></a>
-<a href="https://github.com/richardleach"><img src="https://github.com/richardleach.png" width="40px" /></a>
-<a href="https://github.com/bear"><img src="https://github.com/bear.png" width="40px" /></a>
-<a href="https://github.com/cminter"><img src="https://github.com/cminter.png" width="40px" /></a>
-<a href="https://github.com/bahur142"><img src="https://github.com/bahur142.png" width="40px" /></a>
-<a href="https://github.com/pgwiebes"><img src="https://github.com/pgwiebes.png" width="40px" /></a>
-<a href="https://github.com/ralhei"><img src="https://github.com/ralhei.png" width="40px" /></a>
-<a href="https://github.com/TechMDW"><img src="https://github.com/TechMDW.png" width="40px" /></a>
-<a href="https://github.com/ubipo"><img src="https://github.com/ubipo.png" width="40px" /></a>
-<a href="https://github.com/tka85"><img src="https://github.com/tka85.png" width="40px" /></a>
-<a href="https://github.com/beekeeb"><img src="https://github.com/beekeeb.png" width="40px" /></a>
-<a href="https://github.com/Emiliaaah"><img src="https://github.com/Emiliaaah.png" width="40px" /></a>
-<a href="https://github.com/zark0s"><img src="https://github.com/zark0s.png" width="40px" /></a>
-<a href="https://github.com/tomershvueli"><img src="https://github.com/tomershvueli.png" width="40px" /></a>
-<a href="https://github.com/CataIana"><img src="https://github.com/CataIana.png" width="40px" /></a>
-<a href="https://github.com/ajay-actuary"><img src="https://github.com/ajay-actuary.png" width="40px" /></a>
-<a href="https://github.com/mursec"><img src="https://github.com/mursec.png" width="40px" /></a>
-<a href="https://github.com/FrameXX"><img src="https://github.com/FrameXX.png" width="40px" /></a>
-<a href="https://github.com/vovayartsev"><img src="https://github.com/vovayartsev.png" width="40px" /></a>
-<a href="https://github.com/dwain-lab"><img src="https://github.com/dwain-lab.png" width="40px" /></a>
-<a href="https://github.com/brookmg"><img src="https://github.com/brookmg.png" width="40px" /></a>
-<a href="https://github.com/siebej"><img src="https://github.com/siebej.png" width="40px" /></a>
-<a href="https://github.com/rxsantos"><img src="https://github.com/rxsantos.png" width="40px" /></a>
-<a href="https://github.com/hermannx5"><img src="https://github.com/hermannx5.png" width="40px" /></a>
-<a href="https://github.com/rwxd"><img src="https://github.com/rwxd.png" width="40px" /></a>
-<a href="https://github.com/Integral-Tech"><img src="https://github.com/Integral-Tech.png" width="40px" /></a>
-<a href="https://github.com/TheTomik1"><img src="https://github.com/TheTomik1.png" width="40px" /></a>
-<a href="https://github.com/dav23r"><img src="https://github.com/dav23r.png" width="40px" /></a>
-<a href="https://github.com/stannynuytkens"><img src="https://github.com/stannynuytkens.png" width="40px" /></a>
-<a href="https://github.com/danbartram"><img src="https://github.com/danbartram.png" width="40px" /></a>
-<a href="https://github.com/arthurgleckler"><img src="https://github.com/arthurgleckler.png" width="40px" /></a>
-<a href="https://github.com/tomroth04"><img src="https://github.com/tomroth04.png" width="40px" /></a>
-<a href="https://github.com/Circenn5130"><img src="https://github.com/Circenn5130.png" width="40px" /></a>
-<a href="https://github.com/jceloria"><img src="https://github.com/jceloria.png" width="40px" /></a>
-<a href="https://github.com/afunworm"><img src="https://github.com/afunworm.png" width="40px" /></a>
-<a href="https://github.com/PTR-inc"><img src="https://github.com/PTR-inc.png" width="40px" /></a>
-<a href="https://github.com/spudooli"><img src="https://github.com/spudooli.png" width="40px" /></a>
-<a href="https://github.com/IMarkoMC"><img src="https://github.com/IMarkoMC.png" width="40px" /></a>
-<a href="https://github.com/rubund"><img src="https://github.com/rubund.png" width="40px" /></a>
-<a href="https://github.com/Riolku"><img src="https://github.com/Riolku.png" width="40px" /></a>
-<a href="https://github.com/arnbrhm"><img src="https://github.com/arnbrhm.png" width="40px" /></a>
-<a href="https://github.com/herzkerl"><img src="https://github.com/herzkerl.png" width="40px" /></a>
-<a href="https://github.com/0x45796164"><img src="https://github.com/0x45796164.png" width="40px" /></a>
-<a href="https://github.com/madchr1st"><img src="https://github.com/madchr1st.png" width="40px" /></a>
-<a href="https://github.com/avalentic"><img src="https://github.com/avalentic.png" width="40px" /></a>
-<a href="https://github.com/TheCraiggers"><img src="https://github.com/TheCraiggers.png" width="40px" /></a>
-<a href="https://github.com/sheetd"><img src="https://github.com/sheetd.png" width="40px" /></a>
-<a href="https://github.com/dlt-green"><img src="https://github.com/dlt-green.png" width="40px" /></a>
-<a href="https://github.com/suhlig"><img src="https://github.com/suhlig.png" width="40px" /></a>
-<a href="https://github.com/Proximus888"><img src="https://github.com/Proximus888.png" width="40px" /></a>
-<a href="https://github.com/wielandp"><img src="https://github.com/wielandp.png" width="40px" /></a>
-<a href="https://github.com/chxseh"><img src="https://github.com/chxseh.png" width="40px" /></a>
-<a href="https://github.com/user8446"><img src="https://github.com/user8446.png" width="40px" /></a>
-<a href="https://github.com/cdf-eagles"><img src="https://github.com/cdf-eagles.png" width="40px" /></a>
+# Storage
+cache-file: "/var/lib/coop/cache.db"
+cache-duration: "87600h"  # 10 years
+
+# Attachments
+attachment-cache-dir: "/var/lib/coop/attachments"
+attachment-expiry-duration: "0"  # Never expire
+
+# Auth (invite-only by default)
+auth-file: "/var/lib/coop/user.db"
+auth-default-access: "deny-all"
+enable-login: true
+enable-signup: false
+require-login: true
+```
+
+For all configuration options, see the [ntfy documentation](https://docs.ntfy.sh/config/).
+
+## How It Works
+
+### For Admins
+
+1. **Create invite links** in the Admin Panel to invite users
+2. **Manage chats** -- see all active channels and their stats
+3. **Approve join requests** -- users can request access to chats they don't have permission for
+4. **Monitor users** -- view and manage all registered users
+
+### For Users
+
+1. **Accept an invite** to create your account and join your first chats
+2. **Create new chats** with auto-generated IDs
+3. **Share chat IDs** so others can join (via the chat menu)
+4. **Request to join** chats you don't have access to yet
+
+### Mobile Apps
+
+Since Coop is API-compatible with ntfy, you can use the existing mobile apps:
+
+- **Android**: [ntfy on Google Play](https://play.google.com/store/apps/details?id=io.heckel.ntfy) or [F-Droid](https://f-droid.org/en/packages/io.heckel.ntfy/)
+- **iOS**: [ntfy on App Store](https://apps.apple.com/us/app/ntfy/id1625396347)
+
+Simply point the app at your Coop server URL and log in with your credentials.
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend | Go 1.24, SQLite, WebSocket/SSE |
+| Frontend | React 19, Vite, Material UI |
+| Design | Neobrutalism (Space Grotesk, DM Sans, JetBrains Mono) |
+| Storage | SQLite (messages, users, invites) + IndexedDB (client-side) |
+| Deployment | Docker, Docker Compose |
+
+## Roadmap
+
+See [ROADMAP.md](docs/ROADMAP.md) for the full roadmap.
+
+**Current priorities:**
+- UX polish (auto-scroll, unread highlighting, date separators)
+- Media previews and rich message content
+- User profiles and avatars
+
+**Long-term vision:**
+Coop aims to become a **cooperative messaging network** where self-hosted servers can communicate with each other -- similar to how email or Matrix federation works. Run your own server, but still chat with people on other Coop instances. This is an ambitious goal and contributions are very welcome.
+
+## Development
+
+### Prerequisites
+
+- Go 1.24+
+- Node.js 18+
+- Make
+
+### Build from source
+
+```bash
+# Install web dependencies
+make web-deps
+
+# Build the web frontend
+make web-build
+
+# Build the server binary
+make cli-linux-server
+```
+
+### Docker build
+
+```bash
+docker build --network=host -f Dockerfile-coop -t coop .
+```
+
+### Vite dev server (live reload for frontend)
+
+```bash
+cd web
+npx vite --port 3001
+```
+
+The dev server proxies API calls to the backend on port 9090.
 
 ## Contributing
-I welcome any contributions. Just create a PR or an issue. For larger features/ideas, please reach out
-on Discord/Matrix first to see if I'd accept them. To contribute code, check out the [build instructions](https://ntfy.sh/docs/develop/)
-for the server and the Android app. Or, if you'd like to help translate 🇩🇪 🇺🇸 🇧🇬, you can start immediately in
-[Hosted Weblate](https://hosted.weblate.org/projects/ntfy/).
 
-<a href="https://hosted.weblate.org/engage/ntfy/">
-<img src="https://hosted.weblate.org/widgets/ntfy/-/multi-blue.svg" alt="Translation status" />
-</a>
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request.
 
-## Code of Conduct
-We as members, contributors, and leaders pledge to make participation in our community a harassment-free experience for
-everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity
-and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, caste,
-color, religion, or sexual identity and orientation.
+## Acknowledgments
 
-**We pledge to act and interact in ways that contribute to an open, welcoming, diverse, inclusive, and healthy community.**
-
-_Please be sure to read the complete [Code of Conduct](CODE_OF_CONDUCT.md)._    
+Coop is a fork of [ntfy](https://github.com/binwiederhier/ntfy) v2.17.0 by [Philipp C. Heckel](https://heckel.io). The original project provides the robust pub-sub engine, API, and mobile app ecosystem that Coop builds upon. While we've significantly modified the frontend, added a complete invite/join system, redesigned the UI with Neobrutalism, and rebuilt the user experience around messaging, the ntfy core remains the reliable backbone. Huge thanks to the ntfy community and all its contributors.
 
 ## License
-Made with ❤️ by [Philipp C. Heckel](https://heckel.io).   
-The project is dual licensed under the [Apache License 2.0](LICENSE) and the [GPLv2 License](LICENSE.GPLv2).
 
-Third-party libraries and resources:
-* [github.com/urfave/cli](https://github.com/urfave/cli) (MIT) is used to drive the CLI
-* [Mixkit sounds](https://mixkit.co/free-sound-effects/notification/) (Mixkit Free License) are used as notification sounds
-* [Sounds from notificationsounds.com](https://notificationsounds.com) (Creative Commons Attribution) are used as notification sounds
-* [Roboto Font](https://fonts.google.com/specimen/Roboto) (Apache 2.0) is used as a font in everything web
-* [React](https://reactjs.org/) (MIT) is used for the web app
-* [Material UI components](https://mui.com/) (MIT) are used in the web app
-* [MUI dashboard template](https://github.com/mui/material-ui/tree/master/docs/data/material/getting-started/templates/dashboard) (MIT) was used as a basis for the web app
-* [Dexie.js](https://github.com/dexie/Dexie.js) (Apache 2.0) is used for web app persistence in IndexedDB
-* [GoReleaser](https://goreleaser.com/) (MIT) is used to create releases
-* [go-smtp](https://github.com/emersion/go-smtp) (MIT) is used to receive e-mails
-* [stretchr/testify](https://github.com/stretchr/testify) (MIT) is used for unit and integration tests
-* [github.com/mattn/go-sqlite3](https://github.com/mattn/go-sqlite3) (MIT) is used to provide the persistent message cache
-* [Firebase Admin SDK](https://github.com/firebase/firebase-admin-go) (Apache 2.0) is used to send FCM messages
-* [github/gemoji](https://github.com/github/gemoji) (MIT) is used for emoji support (specifically the [emoji.json](https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json) file)
-* [Lightbox with vanilla JS](https://yossiabramov.com/blog/vanilla-js-lightbox) as a lightbox on the landing page 
-* [HTTP middleware for gzip compression](https://gist.github.com/CJEnright/bc2d8b8dc0c1389a9feeddb110f822d7) (MIT) is used for serving static files
-* [Regex for auto-linking](https://github.com/bryanwoods/autolink-js) (MIT) is used to highlight links (the library is not used)
-* [Statically linking go-sqlite3](https://www.arp242.net/static-go.html)
-* [Linked tabs in mkdocs](https://facelessuser.github.io/pymdown-extensions/extensions/tabbed/#linked-tabs)
-* [webpush-go](https://github.com/SherClockHolmes/webpush-go) (MIT) is used to send web push notifications
-* [Sprig](https://github.com/Masterminds/sprig) (MIT) is used to add template parsing functions
+Copyright (C) 2025 LL4nc33
+
+This program is free software: you can redistribute it and/or modify it under the terms of the [GNU Affero General Public License](LICENSE) as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+The original ntfy code is dual-licensed under [Apache License 2.0](LICENSE.Apache-2.0) and [GPLv2](LICENSE.GPLv2). Coop's modifications and additions are licensed under AGPLv3.
+
+### Third-party
+
+- [ntfy](https://github.com/binwiederhier/ntfy) (Apache 2.0 / GPLv2) -- the foundation
+- [React](https://react.dev) (MIT) -- web framework
+- [Material UI](https://mui.com) (MIT) -- UI components
+- [Dexie.js](https://github.com/dexie/Dexie.js) (Apache 2.0) -- IndexedDB wrapper
+- [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk), [DM Sans](https://fonts.google.com/specimen/DM+Sans), [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono) -- fonts
+- [go-sqlite3](https://github.com/mattn/go-sqlite3) (MIT) -- SQLite driver
+- See ntfy's full [dependency list](https://github.com/binwiederhier/ntfy#license) for additional libraries

@@ -44,6 +44,7 @@ import CelebrationIcon from "@mui/icons-material/Celebration";
 import CloseIcon from "@mui/icons-material/Close";
 import { ContentCopy, Public } from "@mui/icons-material";
 import AddIcon from "@mui/icons-material/Add";
+import ShieldIcon from "@mui/icons-material/Shield";
 import routes from "./routes";
 import { copyToClipboard, formatBytes, formatShortDate, formatShortDateTime, openUrl } from "../app/utils";
 import accountApi, { LimitBasis, Role, SubscriptionInterval, SubscriptionStatus } from "../app/AccountApi";
@@ -104,7 +105,7 @@ const Username = () => {
           <>
             {" "}
             <Tooltip title={t("account_basics_username_admin_tooltip")}>
-              <span style={{ cursor: "default" }}>👑</span>
+              <ShieldIcon sx={{ fontSize: "1rem", verticalAlign: "middle", color: "var(--coop-accent)" }} />
             </Tooltip>
           </>
         )}

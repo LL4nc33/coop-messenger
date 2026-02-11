@@ -22,7 +22,7 @@ class Api {
     for await (const line of fetchLinesIterator(url, headers)) {
       const message = JSON.parse(line);
       if (message.id) {
-        console.log(`[Api, ${shortUrl}] Received message ${line}`);
+        console.log(`[Api] Received message`);
         messages.push(message);
       }
     }
@@ -72,11 +72,11 @@ class Api {
       xhr.upload.addEventListener("progress", onProgress);
       xhr.addEventListener("readystatechange", () => {
         if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status <= 299) {
-          console.log(`[Api] Publish successful (HTTP ${xhr.status})`, xhr.response);
+          console.log(`[Api] Publish successful (HTTP ${xhr.status})`);
           resolve(xhr.response);
         } else if (xhr.readyState === 4) {
           // Firefox bug; see description above!
-          console.log(`[Api] Publish failed (HTTP ${xhr.status})`, xhr.responseText);
+          console.log(`[Api] Publish failed (HTTP ${xhr.status})`);
           let errorText;
           try {
             const error = JSON.parse(xhr.responseText);
@@ -118,7 +118,7 @@ class Api {
   async updateWebPush(pushSubscription, topics) {
     const user = await userManager.get(config.base_url);
     const url = webPushUrl(config.base_url);
-    console.log(`[Api] Updating Web Push subscription`, { url, topics, endpoint: pushSubscription.endpoint });
+    console.log(`[Api] Updating Web Push subscription`);
     const serializedSubscription = JSON.parse(JSON.stringify(pushSubscription)); // Ugh ... https://stackoverflow.com/a/40525434/1440785
     await fetchOrThrow(url, {
       method: "POST",
@@ -135,7 +135,7 @@ class Api {
   async deleteWebPush(pushSubscription) {
     const user = await userManager.get(config.base_url);
     const url = webPushUrl(config.base_url);
-    console.log(`[Api] Deleting Web Push subscription`, { url, endpoint: pushSubscription.endpoint });
+    console.log(`[Api] Deleting Web Push subscription`);
     await fetchOrThrow(url, {
       method: "DELETE",
       headers: maybeWithAuth({}, user),

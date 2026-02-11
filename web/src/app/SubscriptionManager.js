@@ -2,6 +2,7 @@ import api from "./Api";
 import notifier from "./Notifier";
 import prefs from "./Prefs";
 import db from "./db";
+import session from "./Session";
 import { topicUrl } from "./utils";
 import { messageWithSequenceId } from "./notificationUtils";
 import { EVENT_MESSAGE, EVENT_MESSAGE_CLEAR, EVENT_MESSAGE_DELETE } from "./events";
@@ -53,6 +54,11 @@ class SubscriptionManager {
     if (notification.event !== EVENT_MESSAGE) {
       return;
     }
+    // Eigene Nachrichten nicht als Notification anzeigen
+    const currentUser = session.username();
+    if (currentUser && notification.sender && notification.sender === currentUser) {
+      return;
+    }
     const subscription = await this.get(subscriptionId);
     if (subscription.mutedUntil > 0) {
       return;
@@ -94,7 +100,7 @@ class SubscriptionManager {
   }
 
   async syncFromRemote(remoteSubscriptions, remoteReservations) {
-    console.log(`[SubscriptionManager] Syncing subscriptions from remote`, remoteSubscriptions);
+    console.log(`[SubscriptionManager] Syncing subscriptions from remote`);
 
     // Add remote subscriptions
     const remoteIds = await Promise.all(
@@ -184,10 +190,13 @@ class SubscriptionManager {
       // so if you change it here, change it there too.
 
       // Add notification to database
+      // Eigene Nachrichten direkt als gelesen markieren (kein Unread-Badge)
+      const currentUser = session.username();
+      const isOwnMessage = currentUser && notification.sender && notification.sender === currentUser;
       await this.db.notifications.add({
         ...messageWithSequenceId(notification),
         subscriptionId,
-        new: 1, // New marker (used for bubble indicator); cannot be boolean; Dexie index limitation
+        new: isOwnMessage ? 0 : 1,
       });
 
       // FIXME consider put() for double tab

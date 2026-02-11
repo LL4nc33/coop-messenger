@@ -8,7 +8,7 @@ import session from "./Session";
 // - As per docs, we only declare the indexable columns, not all columns
 
 const createDatabase = (username) => {
-  const dbName = username ? `ntfy-${username}` : "ntfy"; // IndexedDB database is based on the logged-in user
+  const dbName = username ? `coop-${username}` : "coop"; // IndexedDB database is based on the logged-in user
   const db = new Dexie(dbName);
 
   db.version(3).stores({

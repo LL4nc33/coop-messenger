@@ -1,0 +1,1281 @@
+/* ============================================
+   COOP MESSENGER - NEOBRUTALISM DESIGN SYSTEM
+   ============================================ */
+
+/* Google Fonts Import */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+/* ============================================
+   CSS CUSTOM PROPERTIES
+   ============================================ */
+
+:root {
+  /* Base Colors */
+  --coop-bg: #FFFDF7;
+  --coop-bg-dark: #1a1a1a;
+  --coop-black: #000000;
+  --coop-white: #FFFFFF;
+
+  /* Accent Color (configurable via JS) */
+  --coop-accent: #C4A265;
+  --coop-accent-hover: #A8873F;
+
+  /* Brand Colors */
+  --coop-yellow: #FFD700;
+  --coop-yellow-hover: #E6C200;
+  --coop-blue: #3B82F6;
+  --coop-pink: #FF6B9D;
+  --coop-green: #22C55E;
+  --coop-red: #EF4444;
+  --coop-red-hover: #DC2626;
+  --coop-purple: #A855F7;
+  --coop-orange: #F97316;
+
+  /* Gray Scale */
+  --coop-gray-100: #F3F4F6;
+  --coop-gray-200: #E5E7EB;
+  --coop-gray-300: #D1D5DB;
+  --coop-gray-400: #9CA3AF;
+  --coop-gray-500: #6B7280;
+  --coop-gray-600: #4B5563;
+  --coop-gray-700: #374151;
+  --coop-gray-800: #1F2937;
+  --coop-gray-900: #111827;
+
+  /* Borders */
+  --coop-border: 3px solid var(--coop-black);
+  --coop-border-thin: 2px solid var(--coop-black);
+
+  /* Shadow color - stays dark regardless of theme */
+  --coop-shadow-color: #000000;
+  --coop-shadow: 4px 4px 0px var(--coop-shadow-color);
+  --coop-shadow-sm: 2px 2px 0px var(--coop-shadow-color);
+  --coop-shadow-lg: 6px 6px 0px var(--coop-shadow-color);
+  --coop-shadow-hover: 6px 6px 0px var(--coop-shadow-color);
+
+  /* Border Radius (KEINE runden Ecken!) */
+  --coop-radius: 0px;
+  --coop-radius-sm: 2px;
+
+  /* Typography */
+  --coop-font-display: 'Space Grotesk', sans-serif;
+  --coop-font-body: 'DM Sans', sans-serif;
+  --coop-font-ui: 'JetBrains Mono', monospace;
+
+  /* Link Color */
+  --coop-link: #2563EB;
+  --coop-link-hover: #1D4ED8;
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+body {
+  background-color: var(--coop-bg);
+  font-family: var(--coop-font-body);
+  color: var(--coop-black);
+  line-height: 1.6;
+}
+
+* {
+  font-family: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--coop-font-display);
+  font-weight: 700;
+}
+
+/* Links - global readable color (not yellow on white) */
+a {
+  color: var(--coop-link);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+a:hover {
+  color: var(--coop-link-hover);
+}
+
+/* Selection highlight */
+::selection {
+  background-color: var(--coop-accent);
+  color: var(--coop-black);
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--coop-bg);
+  border-left: 2px solid var(--coop-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--coop-accent);
+  border: 2px solid var(--coop-black);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--coop-accent-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--coop-bg);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--coop-accent) var(--coop-bg);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.coop-btn {
+  font-family: var(--coop-font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 12px 24px;
+  border: var(--coop-border);
+  border-radius: var(--coop-radius);
+  box-shadow: var(--coop-shadow);
+  background-color: var(--coop-accent);
+  color: var(--coop-black);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.coop-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--coop-shadow-hover);
+}
+
+.coop-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.coop-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: var(--coop-shadow);
+}
+
+.coop-btn-invite {
+  background-color: var(--coop-purple);
+  color: var(--coop-white);
+}
+
+/* ============================================
+   CARDS
+   ============================================ */
+
+.coop-card {
+  background-color: var(--coop-white);
+  border: var(--coop-border);
+  border-radius: var(--coop-radius);
+  box-shadow: var(--coop-shadow);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.coop-card:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0px var(--coop-black);
+}
+
+/* ============================================
+   INPUTS
+   ============================================ */
+
+.coop-input {
+  font-family: var(--coop-font-ui);
+  padding: 12px 16px;
+  border: var(--coop-border-thin);
+  border-radius: var(--coop-radius);
+  box-shadow: var(--coop-shadow-sm);
+  background-color: var(--coop-white);
+  color: var(--coop-black);
+  font-size: 14px;
+  width: 100%;
+  transition: all 0.15s ease;
+}
+
+.coop-input:focus {
+  outline: none;
+  border-color: var(--coop-blue);
+  box-shadow: var(--coop-shadow);
+  transform: translate(-1px, -1px);
+}
+
+.coop-input::placeholder {
+  color: var(--coop-gray-400);
+  font-family: var(--coop-font-ui);
+}
+
+/* ============================================
+   INVITE CARD
+   ============================================ */
+
+.coop-invite-card {
+  background-color: var(--coop-purple);
+  color: var(--coop-white);
+  border: var(--coop-border);
+  border-radius: var(--coop-radius);
+  box-shadow: var(--coop-shadow-lg);
+  padding: 24px;
+  margin: 16px 0;
+}
+
+.coop-invite-card h3 {
+  font-family: var(--coop-font-display);
+  font-weight: 700;
+  font-size: 20px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.coop-invite-card p {
+  font-family: var(--coop-font-body);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+/* ============================================
+   MUI OVERRIDES - TYPOGRAPHY
+   ============================================ */
+
+/* Body text uses DM Sans */
+.MuiTypography-root {
+  font-family: var(--coop-font-body) !important;
+  color: inherit;
+}
+
+/* All heading variants use Space Grotesk */
+.MuiTypography-h1,
+.MuiTypography-h2,
+.MuiTypography-h3,
+.MuiTypography-h4,
+.MuiTypography-h5,
+.MuiTypography-h6 {
+  font-family: var(--coop-font-display) !important;
+  font-weight: 700 !important;
+  color: var(--coop-black) !important;
+}
+
+/* h5 is used for section headers like "Notifications", "Appearance" */
+.MuiTypography-h5 {
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* h6 used in ActionBar title */
+.MuiTypography-h6 {
+  font-family: var(--coop-font-display) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - LINKS
+   ============================================ */
+
+.MuiLink-root {
+  color: var(--coop-link) !important;
+  text-decoration: underline !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: 2px !important;
+  font-weight: 600 !important;
+  transition: color 0.15s ease !important;
+}
+
+.MuiLink-root:hover {
+  color: var(--coop-link-hover) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - BUTTONS
+   ============================================ */
+
+.MuiButton-root {
+  border: var(--coop-border-thin) !important;
+  border-radius: var(--coop-radius) !important;
+  box-shadow: var(--coop-shadow-sm) !important;
+  font-family: var(--coop-font-display) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+}
+
+.MuiButton-root:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--coop-shadow-hover) !important;
+}
+
+.MuiButton-root:active {
+  transform: translate(2px, 2px);
+  box-shadow: none !important;
+}
+
+.MuiButton-contained {
+  background-color: var(--coop-accent) !important;
+  color: var(--coop-black) !important;
+}
+
+.MuiButton-contained:hover {
+  background-color: var(--coop-accent-hover) !important;
+  color: var(--coop-black) !important;
+}
+
+.MuiButton-outlined {
+  background-color: var(--coop-white) !important;
+  color: var(--coop-black) !important;
+  border-color: var(--coop-black) !important;
+}
+
+.MuiButton-outlined:hover {
+  background-color: var(--coop-gray-100) !important;
+}
+
+/* Text buttons (used in alerts, etc.) - no shadow, subtle style */
+.MuiButton-text {
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--coop-black) !important;
+  font-weight: 700 !important;
+  text-decoration: underline !important;
+  text-decoration-thickness: 2px !important;
+}
+
+.MuiButton-text:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - ICON BUTTONS
+   ============================================ */
+
+.MuiIconButton-root {
+  border-radius: var(--coop-radius) !important;
+  transition: background-color 0.15s ease, transform 0.1s ease !important;
+  color: inherit !important;
+}
+
+.MuiIconButton-root:hover {
+  background-color: rgba(0, 0, 0, 0.12) !important;
+  transform: scale(1.1);
+}
+
+/* Icon buttons on AppBar - inherit black from toolbar color */
+.MuiAppBar-root .MuiIconButton-root {
+  color: #000000 !important;
+}
+
+.MuiAppBar-root .MuiIconButton-root:hover {
+  background-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - APPBAR / TOOLBAR
+   ============================================ */
+
+/*
+ * The ActionBar applies inline sx: background: getActionBarBackground()
+ * which returns #FFD700 for light mode. We must NOT fight that.
+ * Use transparent so the inline style wins.
+ */
+.MuiAppBar-root {
+  border-bottom: var(--coop-border) !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  color: var(--coop-black) !important;
+  border-radius: 0 !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  /* z-index managed via sx prop in ActionBar.jsx */
+}
+
+/* Toolbar text should always be black on yellow */
+.MuiToolbar-root {
+  color: #000000 !important;
+}
+
+/* Title text in the toolbar */
+.MuiAppBar-root .MuiTypography-root {
+  color: #000000 !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - PAPER
+   ============================================ */
+
+.MuiPaper-root {
+  border: var(--coop-border) !important;
+  border-radius: var(--coop-radius) !important;
+  box-shadow: var(--coop-shadow) !important;
+  background-color: var(--coop-white) !important;
+}
+
+/* Elevation 0 papers should be less aggressive */
+.MuiPaper-elevation0 {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - DRAWER / SIDEBAR
+   ============================================ */
+
+.MuiDrawer-paper {
+  border-right: var(--coop-border) !important;
+  background-color: var(--coop-bg) !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  overflow-x: hidden !important;
+}
+
+/* Sidebar navigation list */
+.MuiDrawer-paper .MuiList-root {
+  background-color: var(--coop-bg) !important;
+  padding: 0 !important;
+}
+
+/* Sidebar list subheaders */
+.MuiDrawer-paper .MuiListSubheader-root {
+  font-family: var(--coop-font-display) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  font-size: 11px !important;
+  color: var(--coop-gray-500) !important;
+  background-color: var(--coop-bg) !important;
+  border-bottom: 1px solid var(--coop-gray-200) !important;
+  padding: 12px 16px 8px !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - LIST ITEMS (Sidebar)
+   ============================================ */
+
+.MuiList-root .MuiListItemButton-root {
+  border-bottom: 1px solid var(--coop-gray-200) !important;
+  transition: all 0.15s ease !important;
+  color: var(--coop-black) !important;
+}
+
+.MuiList-root .MuiListItemButton-root:hover {
+  background-color: var(--coop-accent) !important;
+  color: var(--coop-black) !important;
+}
+
+/* Selected / active sidebar item - accent color, black text */
+.MuiList-root .MuiListItemButton-root.Mui-selected {
+  background-color: var(--coop-accent) !important;
+  padding-left: 22px !important;
+  color: var(--coop-black) !important;
+}
+
+.MuiList-root .MuiListItemButton-root.Mui-selected .MuiListItemText-primary {
+  color: var(--coop-black) !important;
+  font-weight: 700 !important;
+}
+
+.MuiList-root .MuiListItemButton-root.Mui-selected:hover {
+  background-color: var(--coop-accent-hover) !important;
+  color: var(--coop-black) !important;
+}
+
+/* List item text styling */
+.MuiListItemText-primary {
+  font-family: var(--coop-font-body) !important;
+  font-weight: 500 !important;
+  color: var(--coop-black) !important;
+}
+
+.MuiListItemText-secondary {
+  font-family: var(--coop-font-body) !important;
+  color: var(--coop-gray-500) !important;
+}
+
+/* List item icons */
+.MuiListItemIcon-root {
+  color: var(--coop-black) !important;
+  min-width: 36px !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - BADGE (notification bell)
+   ============================================ */
+
+.MuiBadge-badge {
+  background-color: var(--coop-pink) !important;
+  color: var(--coop-white) !important;
+  font-family: var(--coop-font-display) !important;
+  font-weight: 700 !important;
+  border: 2px solid var(--coop-black) !important;
+  border-radius: var(--coop-radius) !important;
+  box-shadow: var(--coop-shadow-sm) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - ALERT BANNERS
+   ============================================ */
+
+.MuiAlert-root {
+  border: 3px solid var(--coop-black) !important;
+  border-radius: var(--coop-radius) !important;
+  font-family: var(--coop-font-body) !important;
+  box-shadow: none !important;
+  color: var(--coop-black) !important;
+}
+
+/* Warning alerts in sidebar - yellow background */
+.MuiAlert-standardWarning {
+  background-color: #FFF3CD !important;
+  border-color: var(--coop-black) !important;
+}
+
+.MuiAlert-standardWarning .MuiAlert-icon {
+  color: var(--coop-black) !important;
+}
+
+/* Info alerts */
+.MuiAlert-standardInfo {
+  background-color: #DBEAFE !important;
+  border-color: var(--coop-black) !important;
+}
+
+.MuiAlert-standardInfo .MuiAlert-icon {
+  color: var(--coop-black) !important;
+}
+
+/* Error alerts */
+.MuiAlert-standardError {
+  background-color: #FEE2E2 !important;
+  border-color: var(--coop-black) !important;
+}
+
+/* Success alerts */
+.MuiAlert-standardSuccess {
+  background-color: #D1FAE5 !important;
+  border-color: var(--coop-black) !important;
+}
+
+/* Alert title - bold uppercase Space Grotesk */
+.MuiAlertTitle-root {
+  font-family: var(--coop-font-display) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  color: var(--coop-black) !important;
+}
+
+/* Alert message text */
+.MuiAlert-message {
+  color: var(--coop-black) !important;
+}
+
+.MuiAlert-message .MuiTypography-root {
+  color: var(--coop-black) !important;
+}
+
+/* Alert action buttons */
+.MuiAlert-root .MuiButton-root {
+  color: var(--coop-black) !important;
+  border-color: var(--coop-black) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - TEXT FIELDS
+   ============================================ */
+
+.MuiTextField-root input,
+.MuiTextField-root textarea {
+  font-family: var(--coop-font-ui) !important;
+  border-radius: var(--coop-radius) !important;
+  color: var(--coop-black) !important;
+}
+
+.MuiOutlinedInput-root {
+  border-radius: var(--coop-radius) !important;
+  background-color: var(--coop-white) !important;
+  color: var(--coop-black) !important;
+}
+
+.MuiOutlinedInput-notchedOutline {
+  border: var(--coop-border-thin) !important;
+  border-radius: var(--coop-radius) !important;
+}
+
+.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: var(--coop-black) !important;
+  border-width: 3px !important;
+}
+
+.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: var(--coop-blue) !important;
+  border-width: 3px !important;
+  box-shadow: var(--coop-shadow-sm) !important;
+}
+
+/* Input labels */
+.MuiInputLabel-root {
+  font-family: var(--coop-font-display) !important;
+  font-weight: 600 !important;
+  color: var(--coop-gray-600) !important;
+}
+
+.MuiInputLabel-root.Mui-focused {
+  color: var(--coop-blue) !important;
+}
+
+/* Helper text */
+.MuiFormHelperText-root {
+  font-family: var(--coop-font-body) !important;
+  color: var(--coop-gray-500) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - SELECT / DROPDOWN
+   ============================================ */
+
+.MuiSelect-select {
+  font-family: var(--coop-font-ui) !important;
+  border-radius: var(--coop-radius) !important;
+  color: var(--coop-black) !important;
+}
+
+.MuiSelect-icon {
+  color: var(--coop-black) !important;
+}
+
+/* Select dropdown paper */
+.MuiSelect-root ~ .MuiPaper-root,
+.MuiMenu-paper {
+  border: var(--coop-border) !important;
+  border-radius: var(--coop-radius) !important;
+  box-shadow: var(--coop-shadow-lg) !important;
+  background-color: var(--coop-white) !important;
+  margin-top: 4px !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - AUTOCOMPLETE
+   ============================================ */
+
+.MuiAutocomplete-root .MuiOutlinedInput-root {
+  border-radius: var(--coop-radius) !important;
+}
+
+.MuiAutocomplete-input {
+  font-family: var(--coop-font-ui) !important;
+  color: var(--coop-black) !important;
+}
+
+.MuiAutocomplete-popper .MuiPaper-root {
+  border: var(--coop-border) !important;
+  border-radius: var(--coop-radius) !important;
+  box-shadow: var(--coop-shadow-lg) !important;
+  background-color: var(--coop-white) !important;
+}
+
+.MuiAutocomplete-option {
+  font-family: var(--coop-font-body) !important;
+  color: var(--coop-black) !important;
+  border-bottom: 1px solid var(--coop-gray-200) !important;
+}
+
+.MuiAutocomplete-option:hover,
+.MuiAutocomplete-option.Mui-focused {
+  background-color: var(--coop-accent) !important;
+  color: var(--coop-black) !important;
+}
+
+.MuiAutocomplete-option[aria-selected="true"] {
+  background-color: var(--coop-accent) !important;
+  color: var(--coop-black) !important;
+  font-weight: 700 !important;
+}
+
+/* Autocomplete tags/chips */
+.MuiAutocomplete-tag {
+  border: var(--coop-border-thin) !important;
+  border-radius: var(--coop-radius) !important;
+  background-color: var(--coop-accent) !important;
+  color: var(--coop-black) !important;
+  font-family: var(--coop-font-display) !important;
+  font-weight: 700 !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - CHIPS
+   ============================================ */
+
+.MuiChip-root {
+  border: var(--coop-border-thin) !important;
+  border-radius: var(--coop-radius) !important;
+  font-family: var(--coop-font-display) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  box-shadow: var(--coop-shadow-sm) !important;
+  color: var(--coop-black) !important;
+}
+
+.MuiChip-deleteIcon {
+  color: var(--coop-black) !important;
+}
+
+.MuiChip-deleteIcon:hover {
+  color: var(--coop-red) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - TABS
+   ============================================ */
+
+.MuiTab-root {
+  font-family: var(--coop-font-display) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  color: var(--coop-gray-500) !important;
+}
+
+.MuiTab-root.Mui-selected {
+  color: var(--coop-black) !important;
+}
+
+.MuiTabs-indicator {
+  background-color: var(--coop-accent) !important;
+  height: 4px !important;
+  border: var(--coop-border-thin) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - DIALOG
+   ============================================ */
+
+.MuiDialog-paper {
+  border: var(--coop-border) !important;
+  border-radius: var(--coop-radius) !important;
+  box-shadow: var(--coop-shadow-lg) !important;
+  background-color: var(--coop-white) !important;
+}
+
+.MuiDialogTitle-root {
+  font-family: var(--coop-font-display) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  border-bottom: var(--coop-border-thin) !important;
+  color: var(--coop-black) !important;
+  letter-spacing: 0.5px !important;
+}
+
+.MuiDialogContent-root {
+  color: var(--coop-black) !important;
+  padding-top: 20px !important;
+}
+
+.MuiDialogActions-root {
+  border-top: 1px solid var(--coop-gray-200) !important;
+  padding: 16px 24px !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - MENU
+   ============================================ */
+
+.MuiMenu-paper {
+  border: var(--coop-border) !important;
+  border-radius: var(--coop-radius) !important;
+  box-shadow: var(--coop-shadow-lg) !important;
+  background-color: var(--coop-white) !important;
+}
+
+.MuiMenuItem-root {
+  font-family: var(--coop-font-body) !important;
+  border-bottom: 1px solid var(--coop-gray-200) !important;
+  color: var(--coop-black) !important;
+  transition: background-color 0.1s ease !important;
+}
+
+.MuiMenuItem-root:hover {
+  background-color: var(--coop-accent) !important;
+  color: var(--coop-black) !important;
+}
+
+.MuiMenuItem-root:last-child {
+  border-bottom: none !important;
+}
+
+.MuiMenuItem-root .MuiListItemIcon-root {
+  color: var(--coop-black) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - CARD
+   ============================================ */
+
+.MuiCard-root {
+  border: var(--coop-border) !important;
+  border-radius: var(--coop-radius) !important;
+  box-shadow: var(--coop-shadow) !important;
+  background-color: var(--coop-white) !important;
+  transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+}
+
+.MuiCard-root:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0px var(--coop-black) !important;
+}
+
+.MuiCardContent-root {
+  color: var(--coop-black) !important;
+}
+
+.MuiCardContent-root:last-child {
+  padding-bottom: 16px !important;
+}
+
+.MuiCardActions-root {
+  overflow-x: auto !important;
+  border-top: 1px solid var(--coop-gray-200) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - TABLE / GRID ROWS
+   ============================================ */
+
+/* Settings page uses table-like rows */
+.MuiTableRow-root {
+  border-bottom: 2px solid var(--coop-gray-200) !important;
+  transition: background-color 0.1s ease !important;
+}
+
+.MuiTableRow-root:hover {
+  background-color: rgba(196, 162, 101, 0.12) !important;
+}
+
+.MuiTableCell-root {
+  font-family: var(--coop-font-body) !important;
+  color: var(--coop-black) !important;
+  border-bottom: 1px solid var(--coop-gray-200) !important;
+}
+
+.MuiTableCell-head {
+  font-family: var(--coop-font-display) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  font-size: 12px !important;
+  color: inherit !important;
+  border-bottom: var(--coop-border-thin) !important;
+}
+
+/* Grid/Stack item separators for settings rows */
+.MuiStack-root > .MuiBox-root + .MuiBox-root {
+  border-top: 1px solid var(--coop-gray-200);
+}
+
+/* ============================================
+   MUI OVERRIDES - DIVIDER
+   ============================================ */
+
+.MuiDivider-root {
+  border-color: var(--coop-gray-200) !important;
+  border-width: 1px !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - SWITCH / CHECKBOX / RADIO
+   ============================================ */
+
+.MuiSwitch-switchBase.Mui-checked {
+  color: var(--coop-accent) !important;
+}
+
+.MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
+  background-color: var(--coop-accent) !important;
+  opacity: 0.7 !important;
+}
+
+.MuiCheckbox-root.Mui-checked {
+  color: var(--coop-blue) !important;
+}
+
+.MuiRadio-root.Mui-checked {
+  color: var(--coop-blue) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - TOOLTIP
+   ============================================ */
+
+.MuiTooltip-tooltip {
+  background-color: var(--coop-black) !important;
+  color: var(--coop-white) !important;
+  font-family: var(--coop-font-display) !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  border: 2px solid var(--coop-black) !important;
+  border-radius: var(--coop-radius) !important;
+  box-shadow: var(--coop-shadow-sm) !important;
+  padding: 6px 12px !important;
+}
+
+.MuiTooltip-arrow {
+  color: var(--coop-black) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - SNACKBAR
+   ============================================ */
+
+.MuiSnackbar-root .MuiPaper-root {
+  border: var(--coop-border) !important;
+  box-shadow: var(--coop-shadow-lg) !important;
+  font-family: var(--coop-font-display) !important;
+  font-weight: 700 !important;
+  border-radius: var(--coop-radius) !important;
+}
+
+.MuiSnackbarContent-root {
+  background-color: var(--coop-black) !important;
+  color: var(--coop-white) !important;
+  font-family: var(--coop-font-display) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - CIRCULAR PROGRESS
+   ============================================ */
+
+.MuiCircularProgress-root {
+  color: var(--coop-accent) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - BACKDROP
+   ============================================ */
+
+.MuiBackdrop-root {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ============================================
+   MUI OVERRIDES - EMPTY STATE CONTAINERS
+   (VerticallyCenteredContainer / no subscriptions)
+   ============================================ */
+
+/*
+ * The empty state uses a Container with flex centering.
+ * Target the main content area to give it proper Coop styling.
+ */
+main .MuiContainer-root {
+  color: var(--coop-black) !important;
+}
+
+/* Style the empty state card-like appearance */
+main .MuiContainer-maxWidthXs {
+  background-color: var(--coop-bg) !important;
+}
+
+main .MuiContainer-maxWidthXs .MuiTypography-h5 {
+  font-family: var(--coop-font-display) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  color: var(--coop-black) !important;
+}
+
+/* tt/code blocks in the empty state */
+tt, code {
+  font-family: var(--coop-font-ui) !important;
+  background-color: var(--coop-gray-100);
+  border: 1px solid var(--coop-gray-300);
+  padding: 2px 6px;
+  font-size: 13px;
+  color: var(--coop-black);
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+
+[data-theme="dark"] {
+  --coop-accent: #8B9A6B;
+  --coop-accent-hover: #7A8B5A;
+  --coop-shadow-color: rgba(0, 0, 0, 0.6);
+  --coop-bg: var(--coop-bg-dark);
+  --coop-black: #FFFFFF;
+  --coop-white: #1a1a1a;
+  --coop-gray-100: #374151;
+  --coop-gray-200: #4B5563;
+  --coop-gray-300: #6B7280;
+  --coop-gray-400: #9CA3AF;
+  --coop-gray-500: #D1D5DB;
+  --coop-gray-600: #E5E7EB;
+  --coop-gray-700: #F3F4F6;
+  --coop-gray-800: #F9FAFB;
+  --coop-gray-900: #FFFFFF;
+  --coop-link: #60A5FA;
+  --coop-link-hover: #93C5FD;
+}
+
+[data-theme="dark"] body {
+  background-color: var(--coop-bg-dark);
+  color: #FFFDF7;
+}
+
+[data-theme="dark"] .coop-card {
+  background-color: #2a2a2a;
+  border-color: #FFFDF7;
+}
+
+[data-theme="dark"] .coop-input {
+  background-color: #2a2a2a;
+  color: #FFFDF7;
+  border-color: #FFFDF7;
+}
+
+/* Dark mode MUI overrides */
+[data-theme="dark"] .MuiPaper-root {
+  background-color: #2a2a2a !important;
+  border-color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiDrawer-paper {
+  background-color: #1a1a1a !important;
+  border-color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiAppBar-root {
+  background-color: transparent !important;
+  border-color: #FFFDF7 !important;
+}
+
+/* Dark mode toolbar - dark bg with light text */
+[data-theme="dark"] .MuiToolbar-root {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiAppBar-root .MuiTypography-root {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiAppBar-root .MuiIconButton-root {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiTypography-root {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiTypography-h1,
+[data-theme="dark"] .MuiTypography-h2,
+[data-theme="dark"] .MuiTypography-h3,
+[data-theme="dark"] .MuiTypography-h4,
+[data-theme="dark"] .MuiTypography-h5,
+[data-theme="dark"] .MuiTypography-h6 {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiListItemText-primary {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiListItemIcon-root {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiMenuItem-root {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiList-root .MuiListItemButton-root {
+  color: #FFFDF7 !important;
+  border-color: #374151 !important;
+}
+
+[data-theme="dark"] .MuiList-root .MuiListItemButton-root:hover {
+  background-color: var(--coop-accent) !important;
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .MuiList-root .MuiListItemButton-root:hover .MuiListItemText-primary {
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .MuiList-root .MuiListItemButton-root:hover .MuiListItemIcon-root {
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .MuiList-root .MuiListItemButton-root.Mui-selected {
+  background-color: var(--coop-accent) !important;
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .MuiList-root .MuiListItemButton-root.Mui-selected .MuiListItemText-primary {
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .MuiList-root .MuiListItemButton-root.Mui-selected .MuiListItemIcon-root {
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .MuiOutlinedInput-root {
+  background-color: #2a2a2a !important;
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiOutlinedInput-notchedOutline {
+  border-color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiInputLabel-root {
+  color: #9CA3AF !important;
+}
+
+[data-theme="dark"] .MuiSelect-select {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiSelect-icon {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiTableCell-root {
+  color: #FFFDF7 !important;
+  border-color: #374151 !important;
+}
+
+[data-theme="dark"] .MuiAlert-root {
+  border-color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiAlert-standardWarning {
+  background-color: #422006 !important;
+}
+
+[data-theme="dark"] .MuiAlert-standardInfo {
+  background-color: #1E3A5F !important;
+}
+
+[data-theme="dark"] .MuiAlertTitle-root {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiAlert-message {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiAlert-message .MuiTypography-root {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiAlert-icon {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiDialogTitle-root {
+  color: #FFFDF7 !important;
+  border-color: #374151 !important;
+}
+
+[data-theme="dark"] .MuiDialogContent-root {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiCard-root {
+  background-color: #2a2a2a !important;
+  border-color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiCardContent-root {
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiDrawer-paper .MuiList-root {
+  background-color: #1a1a1a !important;
+}
+
+[data-theme="dark"] .MuiDrawer-paper .MuiListSubheader-root {
+  color: #9CA3AF !important;
+  background-color: #1a1a1a !important;
+  border-color: #374151 !important;
+}
+
+[data-theme="dark"] .MuiBadge-badge {
+  border-color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiSnackbarContent-root {
+  background-color: #FFFDF7 !important;
+  color: #000000 !important;
+}
+
+[data-theme="dark"] .MuiTooltip-tooltip {
+  background-color: #FFFDF7 !important;
+  color: #000000 !important;
+  border-color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiDivider-root {
+  border-color: #374151 !important;
+}
+
+[data-theme="dark"] tt,
+[data-theme="dark"] code {
+  background-color: #374151;
+  border-color: #4B5563;
+  color: #FFFDF7;
+}
+
+[data-theme="dark"] .MuiChip-root {
+  border-color: #FFFDF7 !important;
+  color: #FFFDF7 !important;
+}
+
+[data-theme="dark"] .MuiChip-deleteIcon {
+  color: #FFFDF7 !important;
+}
+
+/* Dark mode scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-color: #FFFDF7;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--coop-accent);
+  border-color: #FFFDF7;
+}
+
+[data-theme="dark"] * {
+  scrollbar-color: var(--coop-accent) #1a1a1a;
+}
+

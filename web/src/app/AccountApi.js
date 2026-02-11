@@ -56,7 +56,7 @@ class AccountApi {
 
   async logout() {
     const url = accountTokenUrl(config.base_url);
-    console.log(`[AccountApi] Logging out from ${url} using token ${session.token()}`);
+    console.log(`[AccountApi] Logging out from ${url}`);
     await fetchOrThrow(url, {
       method: "DELETE",
       headers: withBearerAuth({}, session.token()),
@@ -83,7 +83,7 @@ class AccountApi {
       headers: maybeWithBearerAuth({}, session.token()), // GET /v1/account endpoint can be called by anonymous
     });
     const account = await response.json(); // May throw SyntaxError
-    console.log(`[AccountApi] Account`, account);
+    console.log(`[AccountApi] Account fetched`);
     if (this.listener) {
       this.listener(account);
     }
@@ -167,7 +167,7 @@ class AccountApi {
   async updateSettings(payload) {
     const url = accountSettingsUrl(config.base_url);
     const body = JSON.stringify(payload);
-    console.log(`[AccountApi] Updating user account ${url}: ${body}`);
+    console.log(`[AccountApi] Updating user account settings`);
     await fetchOrThrow(url, {
       method: "PATCH",
       headers: withBearerAuth({}, session.token()),
@@ -181,14 +181,14 @@ class AccountApi {
       base_url: baseUrl,
       topic,
     });
-    console.log(`[AccountApi] Adding user subscription ${url}: ${body}`);
+    console.log(`[AccountApi] Adding user subscription`);
     const response = await fetchOrThrow(url, {
       method: "POST",
       headers: withBearerAuth({}, session.token()),
       body,
     });
     const subscription = await response.json(); // May throw SyntaxError
-    console.log(`[AccountApi] Subscription`, subscription);
+    console.log(`[AccountApi] Subscription updated`);
     return subscription;
   }
 
@@ -199,14 +199,14 @@ class AccountApi {
       topic,
       ...payload,
     });
-    console.log(`[AccountApi] Updating user subscription ${url}: ${body}`);
+    console.log(`[AccountApi] Updating user subscription`);
     const response = await fetchOrThrow(url, {
       method: "PATCH",
       headers: withBearerAuth({}, session.token()),
       body,
     });
     const subscription = await response.json(); // May throw SyntaxError
-    console.log(`[AccountApi] Subscription`, subscription);
+    console.log(`[AccountApi] Subscription updated`);
     return subscription;
   }
 
@@ -346,9 +346,8 @@ class AccountApi {
       }
       console.log(`[AccountApi] Syncing account`);
       const account = await this.get();
-      if (account.language) {
-        await i18n.changeLanguage(account.language);
-      }
+      // Coop: Sprache ist immer "en" (enthaelt deutsche Texte)
+      await i18n.changeLanguage("en");
       if (account.notification) {
         if (account.notification.sound) {
           await prefs.setSound(account.notification.sound);

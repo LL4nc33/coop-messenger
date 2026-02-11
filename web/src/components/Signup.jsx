@@ -1,4 +1,3 @@
-import * as React from "react";
 import { useState } from "react";
 import { TextField, Button, Box, Typography, InputAdornment, IconButton } from "@mui/material";
 import { NavLink } from "react-router-dom";
@@ -10,6 +9,51 @@ import AvatarBox from "./AvatarBox";
 import session from "../app/Session";
 import routes from "./routes";
 import { AccountCreateLimitReachedError, UserExistsError } from "../app/errors";
+
+const neoInputSx = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: 0,
+    border: "3px solid var(--coop-black)",
+    boxShadow: "var(--coop-shadow)",
+    "& fieldset": { border: "none" },
+    "&:hover": { boxShadow: "var(--coop-shadow-hover)" },
+    "&.Mui-focused": { boxShadow: "var(--coop-shadow-hover)" },
+  },
+  "& .MuiInputLabel-root": {
+    fontWeight: 600,
+  },
+  "& .MuiInputLabel-shrink": {
+    transform: "translate(14px, -9px) scale(0.75)",
+    backgroundColor: "var(--coop-bg)",
+    padding: "0 6px",
+  },
+};
+
+const neoButtonSx = {
+  mt: 2,
+  mb: 2,
+  borderRadius: 0,
+  border: "3px solid var(--coop-black)",
+  boxShadow: "var(--coop-shadow)",
+  backgroundColor: "var(--coop-accent)",
+  color: "var(--coop-black)",
+  fontWeight: 700,
+  fontFamily: "'Space Grotesk', sans-serif",
+  fontSize: "1rem",
+  "&:hover": {
+    backgroundColor: "var(--coop-accent-hover)",
+    boxShadow: "var(--coop-shadow-hover)",
+  },
+  "&:active": {
+    boxShadow: "none",
+    transform: "translate(2px, 2px)",
+  },
+  "&.Mui-disabled": {
+    border: "3px solid var(--coop-gray-400)",
+    backgroundColor: "var(--coop-gray-200)",
+    boxShadow: "2px 2px 0px var(--coop-gray-400)",
+  },
+};
 
 const Signup = () => {
   const { t } = useTranslation();
@@ -26,11 +70,11 @@ const Signup = () => {
     try {
       await accountApi.create(user.username, user.password);
       const token = await accountApi.login(user);
-      console.log(`[Signup] User signup for user ${user.username} successful, token is ${token}`);
+      console.log(`[Signup] User signup successful`);
       await session.store(user.username, token);
       window.location.href = routes.app;
     } catch (e) {
-      console.log(`[Signup] Signup for user ${user.username} failed`, e);
+      console.log(`[Signup] Signup failed`, e);
       if (e instanceof UserExistsError) {
         setError(t("signup_error_username_taken", { username: e.username }));
       } else if (e instanceof AccountCreateLimitReachedError) {
@@ -51,8 +95,10 @@ const Signup = () => {
 
   return (
     <AvatarBox>
-      <Typography sx={{ typography: "h6" }}>{t("signup_title")}</Typography>
-      <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+      <Typography sx={{ typography: "h6", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700 }}>
+        {t("signup_title")}
+      </Typography>
+      <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1, width: "100%" }}>
         <TextField
           margin="dense"
           required
@@ -60,9 +106,11 @@ const Signup = () => {
           id="username"
           label={t("signup_form_username")}
           name="username"
+          variant="outlined"
           value={username}
           onChange={(ev) => setUsername(ev.target.value.trim())}
           autoFocus
+          sx={neoInputSx}
         />
         <TextField
           margin="dense"
@@ -72,9 +120,11 @@ const Signup = () => {
           label={t("signup_form_password")}
           type={showPassword ? "text" : "password"}
           id="password"
+          variant="outlined"
           autoComplete="new-password"
           value={password}
           onChange={(ev) => setPassword(ev.target.value.trim())}
+          sx={neoInputSx}
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
@@ -94,13 +144,15 @@ const Signup = () => {
           margin="dense"
           required
           fullWidth
-          name="password"
+          name="confirm"
           label={t("signup_form_confirm_password")}
           type={showConfirm ? "text" : "password"}
           id="confirm"
+          variant="outlined"
           autoComplete="new-password"
           value={confirm}
           onChange={(ev) => setConfirm(ev.target.value.trim())}
+          sx={neoInputSx}
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
@@ -116,12 +168,17 @@ const Signup = () => {
             ),
           }}
         />
+        {password && confirm && password !== confirm && (
+          <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+            {t("invite_error_passwords_mismatch", "Passwoerter stimmen nicht ueberein")}
+          </Typography>
+        )}
         <Button
           type="submit"
           fullWidth
           variant="contained"
           disabled={username === "" || password === "" || password !== confirm}
-          sx={{ mt: 2, mb: 2 }}
+          sx={neoButtonSx}
         >
           {t("signup_form_button_submit")}
         </Button>
