@@ -1,13 +1,15 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Box, Button, Chip, Container, Divider, Fab, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import ReplyIcon from "@mui/icons-material/Reply";
 import { useTranslation } from "react-i18next";
 import session from "../app/Session";
-import { formatShortDateTime, unmatchedTags } from "../app/utils";
+import userManager from "../app/UserManager";
+import { formatShortDateTime, maybeWithAuth, unmatchedTags } from "../app/utils";
 import { formatTitle } from "../app/notificationUtils";
 import { NotificationBody, Attachment, UserActions } from "./Notifications";
 import { ReplyContext } from "./App";
+import EmojiReactionPicker from "./EmojiReactionPicker";
 
 const QuoteBlock = ({ replyToText, replyToSender }) => (
   <Box sx={{
@@ -29,7 +31,38 @@ const QuoteBlock = ({ replyToText, replyToSender }) => (
   </Box>
 );
 
-const ChatBubble = React.memo(({ notification, onReply }) => {
+const ReactionChips = ({ reactions, onToggle }) => {
+  if (!reactions || reactions.length === 0) return null;
+  return (
+    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 0.5, px: 0.5 }}>
+      {reactions.map((r) => (
+        <Chip
+          key={r.emoji}
+          label={`${r.emoji} ${r.count}`}
+          size="small"
+          onClick={() => onToggle(r.emoji)}
+          sx={{
+            borderRadius: 0,
+            border: r.reacted ? "2px solid var(--coop-accent)" : "2px solid var(--coop-black)",
+            backgroundColor: r.reacted ? "var(--coop-accent)" : "transparent",
+            color: "var(--coop-black)",
+            boxShadow: "2px 2px 0px var(--coop-black)",
+            fontWeight: 700,
+            fontSize: "0.75rem",
+            height: 26,
+            cursor: "pointer",
+            "&:hover": {
+              backgroundColor: r.reacted ? "var(--coop-accent-hover)" : "var(--coop-gray-100)",
+              boxShadow: "3px 3px 0px var(--coop-black)",
+            },
+          }}
+        />
+      ))}
+    </Box>
+  );
+};
+
+const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionToggle, onReactionAdd }) => {
   const { t, i18n } = useTranslation();
   const isOwn = notification.sender === session.username();
   const otherTags = unmatchedTags(notification.tags);
@@ -92,6 +125,8 @@ const ChatBubble = React.memo(({ notification, onReply }) => {
           )}
         </Box>
 
+        <ReactionChips reactions={reactions} onToggle={(emoji) => onReactionToggle(notification.id, emoji)} />
+
         <Box sx={{ display: "flex", alignItems: "center", mt: 0.25, px: 0.5, gap: 0.5 }}>
           <Typography variant="caption" sx={{ fontFamily: "monospace", color: "text.disabled" }}>
             {formatShortDateTime(notification.time, i18n.language)}
@@ -106,6 +141,7 @@ const ChatBubble = React.memo(({ notification, onReply }) => {
               <ReplyIcon sx={{ fontSize: 14 }} />
             </IconButton>
           </Tooltip>
+          <EmojiReactionPicker onSelect={(emoji) => onReactionAdd(notification.id, emoji)} />
         </Box>
 
         {notification.actions?.length > 0 && (
@@ -174,11 +210,93 @@ const ChatView = ({ notifications, subscription }) => {
   const [showNewMsgButton, setShowNewMsgButton] = useState(false);
   const wasNearBottomRef = useRef(true);
   const prevMessageCountRef = useRef(0);
+  const [reactionsMap, setReactionsMap] = useState({});
 
   const allMessages = notifications.filter(n => n.event === "message");
   const messages = allMessages.length > maxCount
     ? allMessages.slice(0, maxCount).reverse()
     : [...allMessages].reverse();
+
+  // Load reactions for the topic
+  useEffect(() => {
+    if (!subscription) return;
+    const loadReactions = async () => {
+      try {
+        const user = await userManager.get(subscription.baseUrl);
+        const headers = maybeWithAuth({}, user);
+        const resp = await fetch(
+          `${subscription.baseUrl}/v1/coop/reactions?topic=${encodeURIComponent(subscription.topic)}`,
+          { headers },
+        );
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const map = {};
+        for (const item of data) {
+          map[item.message_id] = item.reactions;
+        }
+        setReactionsMap(map);
+      } catch (e) {
+        console.error("[ChatView] Failed to load reactions", e);
+      }
+    };
+    loadReactions();
+  }, [subscription?.baseUrl, subscription?.topic]);
+
+  // Toggle reaction (optimistic update)
+  const handleReactionToggle = useCallback(async (messageId, emoji) => {
+    if (!subscription) return;
+    const username = session.username();
+
+    // Optimistic update
+    setReactionsMap((prev) => {
+      const current = prev[messageId] || [];
+      const existing = current.find((r) => r.emoji === emoji);
+      if (existing) {
+        if (existing.reacted) {
+          // Remove own reaction
+          const newCount = existing.count - 1;
+          if (newCount <= 0) {
+            return { ...prev, [messageId]: current.filter((r) => r.emoji !== emoji) };
+          }
+          return {
+            ...prev,
+            [messageId]: current.map((r) =>
+              r.emoji === emoji
+                ? { ...r, count: newCount, reacted: false, users: r.users.filter((u) => u !== username) }
+                : r,
+            ),
+          };
+        }
+        // Add own reaction to existing emoji
+        return {
+          ...prev,
+          [messageId]: current.map((r) =>
+            r.emoji === emoji
+              ? { ...r, count: r.count + 1, reacted: true, users: [...r.users, username] }
+              : r,
+          ),
+        };
+      }
+      // New emoji
+      return {
+        ...prev,
+        [messageId]: [...current, { emoji, count: 1, users: [username], reacted: true }],
+      };
+    });
+
+    // Send to server
+    try {
+      const user = await userManager.get(subscription.baseUrl);
+      const headers = maybeWithAuth({ "Content-Type": "application/json" }, user);
+      await fetch(`${subscription.baseUrl}/v1/coop/messages/${messageId}/reactions`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ emoji }),
+      });
+    } catch (e) {
+      console.error("[ChatView] Failed to toggle reaction", e);
+    }
+  }, [subscription]);
 
   // Track scroll position
   const handleScroll = useCallback(() => {
@@ -273,7 +391,13 @@ const ChatView = ({ notifications, subscription }) => {
           return (
             <React.Fragment key={notification.id}>
               {showDateSep && <DateSeparator label={getDateLabel(notification.time, t)} />}
-              <ChatBubble notification={notification} onReply={handleReply} />
+              <ChatBubble
+                notification={notification}
+                onReply={handleReply}
+                reactions={reactionsMap[notification.id]}
+                onReactionToggle={handleReactionToggle}
+                onReactionAdd={handleReactionToggle}
+              />
             </React.Fragment>
           );
         })}

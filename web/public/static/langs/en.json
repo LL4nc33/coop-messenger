@@ -457,6 +457,7 @@
   "chat_reply_to": "Antwort an",
   "chat_reply_unknown": "Unbekannt",
   "chat_reply_cancel": "Antwort abbrechen",
+  "chat_reaction_add": "Reaktion hinzufuegen",
   "invite_error_title": "FEHLER",
   "invite_error_not_found": "Invite nicht gefunden",
   "invite_error_invalid": "Invite nicht gueltig",

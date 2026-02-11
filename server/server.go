@@ -567,6 +567,14 @@ func (s *Server) handleInternal(w http.ResponseWriter, r *http.Request, v *visit
 		return s.limitRequests(s.handleInviteInfo)(w, r, v)
 	} else if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/v1/invite/") && strings.HasSuffix(r.URL.Path, "/redeem") {
 		return s.limitRequests(s.handleInviteRedeem)(w, r, v)
+	} else if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/v1/coop/messages/") && strings.HasSuffix(r.URL.Path, "/reactions") {
+		return s.ensureUser(s.handleReactionAdd)(w, r, v)
+	} else if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/v1/coop/messages/") && strings.HasSuffix(r.URL.Path, "/reactions") {
+		return s.ensureUser(s.handleReactionList)(w, r, v)
+	} else if r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, "/v1/coop/messages/") && strings.Contains(r.URL.Path, "/reactions/") {
+		return s.ensureUser(s.handleReactionDelete)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/coop/reactions" {
+		return s.ensureUser(s.handleReactionsByTopic)(w, r, v)
 	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/join-requests" {
 		return s.ensureUser(s.limitRequests(s.handleJoinRequestCreate))(w, r, v)
 	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/join-requests" {
