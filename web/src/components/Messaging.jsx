@@ -8,8 +8,8 @@ const Messaging = (props) => {
     <>
       {subscription && (
         <ChatInput
-          onSend={async (message) => {
-            await api.publish(subscription.baseUrl, subscription.topic, message);
+          onSend={async (message, options) => {
+            await api.publish(subscription.baseUrl, subscription.topic, message, options);
           }}
         />
       )}

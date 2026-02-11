@@ -866,6 +866,16 @@ func (s *Server) handlePublishInternal(r *http.Request, v *visitor) (*message, e
 	if u := v.User(); u != nil {
 		m.SenderName = u.Name
 	}
+	// Coop: Resolve reply_to text preview
+	if m.ReplyTo != "" {
+		if origMsg, err := s.messageCache.Message(m.ReplyTo); err == nil && origMsg != nil {
+			preview := origMsg.Message
+			if len(preview) > 100 {
+				preview = preview[:100]
+			}
+			m.ReplyToText = preview
+		}
+	}
 	if cache {
 		m.Expires = time.Unix(m.Time, 0).Add(v.Limits().MessageExpiryDuration).Unix()
 	}
@@ -1185,6 +1195,7 @@ func (s *Server) parsePublishParams(r *http.Request, m *message) (cache bool, fi
 		priorityStr = "" // Clear since it's already parsed
 	}
 	m.Tags = readCommaSeparatedParam(r, "x-tags", "tags", "tag", "ta")
+	m.ReplyTo = readParam(r, "x-reply-to", "reply-to")
 	delayStr := readParam(r, "x-delay", "delay", "x-at", "at", "x-in", "in")
 	if delayStr != "" {
 		if !cache {
@@ -2154,6 +2165,9 @@ func (s *Server) transformBodyJSON(next handleFunc) handleFunc {
 		}
 		if m.SequenceID != "" {
 			r.Header.Set("X-Sequence-ID", m.SequenceID)
+		}
+		if m.ReplyTo != "" {
+			r.Header.Set("X-Reply-To", m.ReplyTo)
 		}
 		return next(w, r, v)
 	}

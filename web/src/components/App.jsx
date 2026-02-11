@@ -31,6 +31,7 @@ import session from "../app/Session";
 initI18n();
 
 export const AccountContext = createContext(null);
+export const ReplyContext = createContext({ replyTo: null, setReplyTo: () => {} });
 
 const App = () => {
   const { i18n } = useTranslation();
@@ -141,6 +142,7 @@ const Layout = () => {
   const params = useParams();
   const { account, setAccount } = useContext(AccountContext);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [replyTo, setReplyTo] = useState(null);
   const users = useLiveQuery(() => userManager.all());
   const subscriptions = useLiveQuery(() => subscriptionManager.all());
   const webPushTopics = useWebPushTopics();
@@ -157,26 +159,30 @@ const Layout = () => {
   useBackgroundProcesses();
   useEffect(() => updateTitle(newNotificationsCount), [newNotificationsCount]);
 
+  const replyContextValue = useMemo(() => ({ replyTo, setReplyTo }), [replyTo]);
+
   return (
-    <Box sx={{ display: "flex" }}>
-      <ActionBar selected={selected} onMobileDrawerToggle={() => setMobileDrawerOpen(!mobileDrawerOpen)} />
-      <Navigation
-        subscriptions={subscriptionsWithoutInternal}
-        selectedSubscription={selected}
-        mobileDrawerOpen={mobileDrawerOpen}
-        onMobileDrawerToggle={() => setMobileDrawerOpen(!mobileDrawerOpen)}
-      />
-      <Main>
-        <Toolbar />
-        <Outlet
-          context={{
-            subscriptions: subscriptionsWithoutInternal,
-            selected,
-          }}
+    <ReplyContext.Provider value={replyContextValue}>
+      <Box sx={{ display: "flex" }}>
+        <ActionBar selected={selected} onMobileDrawerToggle={() => setMobileDrawerOpen(!mobileDrawerOpen)} />
+        <Navigation
+          subscriptions={subscriptionsWithoutInternal}
+          selectedSubscription={selected}
+          mobileDrawerOpen={mobileDrawerOpen}
+          onMobileDrawerToggle={() => setMobileDrawerOpen(!mobileDrawerOpen)}
         />
-      </Main>
-      <Messaging selected={selected} />
-    </Box>
+        <Main>
+          <Toolbar />
+          <Outlet
+            context={{
+              subscriptions: subscriptionsWithoutInternal,
+              selected,
+            }}
+          />
+        </Main>
+        <Messaging selected={selected} />
+      </Box>
+    </ReplyContext.Provider>
   );
 };
 

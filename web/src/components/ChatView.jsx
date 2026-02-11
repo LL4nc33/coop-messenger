@@ -1,23 +1,49 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Box, Button, Chip, Container, Divider, Fab, Stack, Typography } from "@mui/material";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Box, Button, Chip, Container, Divider, Fab, IconButton, Stack, Tooltip, Typography } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import ReplyIcon from "@mui/icons-material/Reply";
 import { useTranslation } from "react-i18next";
 import session from "../app/Session";
 import { formatShortDateTime, unmatchedTags } from "../app/utils";
 import { formatTitle } from "../app/notificationUtils";
 import { NotificationBody, Attachment, UserActions } from "./Notifications";
+import { ReplyContext } from "./App";
 
-const ChatBubble = React.memo(({ notification }) => {
-  const { i18n } = useTranslation();
+const QuoteBlock = ({ replyToText, replyToSender }) => (
+  <Box sx={{
+    borderLeft: "3px solid var(--coop-accent)",
+    backgroundColor: "var(--coop-gray-100)",
+    px: 1.5,
+    py: 0.5,
+    mb: 0.5,
+    cursor: "pointer",
+  }}>
+    {replyToSender && (
+      <Typography variant="caption" sx={{ fontWeight: 700, display: "block", fontSize: "0.7rem" }}>
+        {replyToSender}
+      </Typography>
+    )}
+    <Typography variant="caption" sx={{ color: "var(--coop-gray-500)", fontStyle: "italic", fontSize: "0.75rem" }}>
+      {replyToText || "..."}
+    </Typography>
+  </Box>
+);
+
+const ChatBubble = React.memo(({ notification, onReply }) => {
+  const { t, i18n } = useTranslation();
   const isOwn = notification.sender === session.username();
   const otherTags = unmatchedTags(notification.tags);
 
   return (
-    <Box sx={{
-      display: "flex",
-      flexDirection: isOwn ? "row-reverse" : "row",
-      maxWidth: "100%",
-    }}>
+    <Box
+      id={`msg-${notification.id}`}
+      sx={{
+        display: "flex",
+        flexDirection: isOwn ? "row-reverse" : "row",
+        maxWidth: "100%",
+        "&:hover .reply-btn": { opacity: 1 },
+      }}
+    >
       <Box sx={{
         maxWidth: "75%",
         display: "flex",
@@ -41,6 +67,10 @@ const ChatBubble = React.memo(({ notification }) => {
           wordBreak: "break-word",
           whiteSpace: "pre-line",
         }}>
+          {notification.reply_to_text && (
+            <QuoteBlock replyToText={notification.reply_to_text} />
+          )}
+
           {notification.title && (
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
               {formatTitle(notification)}
@@ -62,9 +92,21 @@ const ChatBubble = React.memo(({ notification }) => {
           )}
         </Box>
 
-        <Typography variant="caption" sx={{ mt: 0.25, px: 0.5, fontFamily: "monospace", color: "text.disabled" }}>
-          {formatShortDateTime(notification.time, i18n.language)}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", mt: 0.25, px: 0.5, gap: 0.5 }}>
+          <Typography variant="caption" sx={{ fontFamily: "monospace", color: "text.disabled" }}>
+            {formatShortDateTime(notification.time, i18n.language)}
+          </Typography>
+          <Tooltip title={t("chat_reply_button", "Antworten")} placement="top">
+            <IconButton
+              className="reply-btn"
+              size="small"
+              onClick={() => onReply?.(notification)}
+              sx={{ opacity: 0, transition: "opacity 0.15s", p: 0.25 }}
+            >
+              <ReplyIcon sx={{ fontSize: 14 }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
 
         {notification.actions?.length > 0 && (
           <Box sx={{ mt: 0.5 }}>
@@ -125,6 +167,7 @@ const isNearBottom = (container) => {
 
 const ChatView = ({ notifications, subscription }) => {
   const { t } = useTranslation();
+  const { setReplyTo } = useContext(ReplyContext);
   const scrollContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [maxCount, setMaxCount] = useState(20);
@@ -184,6 +227,14 @@ const ChatView = ({ notifications, subscription }) => {
     setShowNewMsgButton(false);
   };
 
+  const handleReply = (notification) => {
+    setReplyTo({
+      id: notification.id,
+      text: (notification.message || "").substring(0, 100),
+      sender: notification.sender || "",
+    });
+  };
+
   return (
     <Container maxWidth="md" sx={{ pt: 2, pb: "100px" }}>
       {messages.length === 0 && (
@@ -222,7 +273,7 @@ const ChatView = ({ notifications, subscription }) => {
           return (
             <React.Fragment key={notification.id}>
               {showDateSep && <DateSeparator label={getDateLabel(notification.time, t)} />}
-              <ChatBubble notification={notification} />
+              <ChatBubble notification={notification} onReply={handleReply} />
             </React.Fragment>
           );
         })}
