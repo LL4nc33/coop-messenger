@@ -17,7 +17,7 @@ const ChatInput = ({ onSend }) => {
   const handleSend = async () => {
     if (message.trim()) {
       try {
-        const options = {};
+        const options = { markdown: true };
         if (replyTo) {
           options.reply_to = replyTo.id;
         }

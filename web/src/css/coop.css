@@ -1279,3 +1279,29 @@ tt, code {
   scrollbar-color: var(--coop-accent) #1a1a1a;
 }
 
+/* ============================================================
+   MARKDOWN IN CHAT BUBBLES
+   ============================================================ */
+
+/* Code blocks: JetBrains Mono + neobrutalism */
+pre, code {
+  font-family: var(--coop-font-mono) !important;
+}
+
+pre {
+  border: 2px solid var(--coop-black) !important;
+  border-radius: 0 !important;
+  box-shadow: 2px 2px 0px var(--coop-black);
+}
+
+/* Links in markdown: accent color */
+a {
+  color: var(--coop-accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--coop-accent-hover);
+}
+
