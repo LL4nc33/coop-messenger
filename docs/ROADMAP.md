@@ -1,6 +1,8 @@
 # Coop Messenger -- Roadmap
 
 > This roadmap reflects the current vision and priorities. It is subject to change.
+>
+> Every feature listed below -- completed or planned -- is developed entirely AI-assisted using [Claude Code](https://claude.ai/claude-code).
 
 ## Version History
 

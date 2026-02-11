@@ -24,7 +24,7 @@ Coop is a private messenger you host yourself. Built as a fork of the excellent 
 
 > **Why "Coop"?** Short for *cooperative*. The idea is simple: messaging should be a shared, cooperative effort -- not controlled by a single corporation. You run the server, you own the data, and everyone cooperates on the same platform.
 
-> **Built with AI.** Coop is developed AI-assisted using [Claude Code](https://claude.ai/claude-code). The architecture decisions, code, UI design, and documentation are a collaboration between a human developer and AI. We believe this is the future of open-source development.
+> **100% AI-assisted.** Every line of code, every design decision, every database migration, the UI, the backend, the invite system, the admin panel, the documentation you're reading right now -- all of it was developed AI-assisted using [Claude Code](https://claude.ai/claude-code). A human developer steers the vision; AI writes the implementation. This is not a toy project with AI sprinkled on top -- it's a full-stack messenger built from the ground up as a human-AI collaboration.
 
 ## Screenshots
 
