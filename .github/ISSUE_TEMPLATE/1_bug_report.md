@@ -1,26 +1,31 @@
 ---
-name: 🐛 Bug Report
-about: Report any errors and problems
+name: Bug Report
+about: Report a bug or unexpected behavior
 title: ''
-labels: '🪲 bug'
+labels: 'bug'
 assignees: ''
 
 ---
 
-:lady_beetle: **Describe the bug**
+**Describe the bug**
 <!-- A clear and concise description of the problem. -->
 
-:computer: **Components impacted**
-<!-- ntfy server, Android app, iOS app, web app  -->
+**Steps to reproduce**
+1. Go to ...
+2. Click on ...
+3. See error
 
-:bulb: **Screenshots and/or logs**
-<!-- 
-If applicable, add screenshots or share logs help explain your problem.
-To get logs from the ...
-- ntfy server: Enable "log-level: trace" in your server.yml file
-- Android app: Go to "Settings" -> "Record logs", then eventually "Copy/upload logs"
-- web app: Press "F12" and find the "Console" window 
+**Expected behavior**
+<!-- What you expected to happen. -->
+
+**Screenshots and/or logs**
+<!--
+If applicable, add screenshots or browser console logs (F12 -> Console).
+For server logs, check Docker logs: docker compose logs coop
 -->
 
-:crystal_ball: **Additional context**
-<!-- Add any other context about the problem here. -->
+**Environment**
+- Browser: [e.g. Chrome 120, Firefox 121]
+- OS: [e.g. Windows 11, macOS, Ubuntu]
+- Coop version: [e.g. 0.4.0]
+- Deployment: [Docker / native build]
