@@ -22,8 +22,8 @@ import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import { useLiveQuery } from "dexie-react-hooks";
 import InfiniteScroll from "react-infinite-scroll-component";
-import { Trans, useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { useRemark } from "react-remark";
 import styled from "@emotion/styled";
 import {
@@ -33,7 +33,7 @@ import {
   maybeActionErrors,
   openUrl,
   shortUrl,
-  topicUrl,
+  topicDisplayName,
   unmatchedTags,
 } from "../app/utils";
 import { ACTION_BROADCAST, ACTION_COPY, ACTION_HTTP, ACTION_VIEW } from "../app/actions";
@@ -45,15 +45,27 @@ import priority1 from "../img/priority-1.svg";
 import priority2 from "../img/priority-2.svg";
 import priority4 from "../img/priority-4.svg";
 import priority5 from "../img/priority-5.svg";
-import logoOutline from "../img/ntfy-outline.svg";
 import AttachmentIcon from "./AttachmentIcon";
+import AddIcon from "@mui/icons-material/Add";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import { useAutoSubscribe } from "./hooks";
+import ChatView from "./ChatView";
+import SubscribeDialog from "./SubscribeDialog";
+import routes from "./routes";
+import session from "../app/Session";
 
-const priorityFiles = {
+export const priorityFiles = {
   1: priority1,
   2: priority2,
   4: priority4,
   5: priority5,
+};
+
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "welcome_greeting_morning";
+  if (hour < 18) return "welcome_greeting_afternoon";
+  return "welcome_greeting_evening";
 };
 
 export const AllSubscriptions = () => {
@@ -61,7 +73,162 @@ export const AllSubscriptions = () => {
   if (!subscriptions) {
     return <Loading />;
   }
-  return <AllSubscriptionsList subscriptions={subscriptions} />;
+  const visible = subscriptions.filter((s) => !s.internal);
+  if (visible.length === 0) {
+    return <NoSubscriptions />;
+  }
+  return <WelcomeBack subscriptions={visible} />;
+};
+
+const WelcomeBack = ({ subscriptions }) => {
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const username = session.username() || "";
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogKey, setDialogKey] = useState(0);
+
+  const handleSubscribeReset = () => {
+    setDialogOpen(false);
+    setDialogKey((prev) => prev + 1);
+  };
+
+  const handleSubscribeSuccess = (subscription) => {
+    handleSubscribeReset();
+    navigate(routes.forSubscription(subscription));
+  };
+
+  return (
+    <Container maxWidth="sm" sx={{ py: { xs: 3, md: 5 }, px: { xs: 2, md: 3 } }}>
+      {/* Begruessung */}
+      <Box sx={{ textAlign: "center", mb: 4 }}>
+        <CoopMonogram />
+        <Typography variant="h5" sx={{ fontWeight: 800, mt: 1 }}>
+          {t(getGreeting(), { username })}
+        </Typography>
+      </Box>
+
+      {/* Letzte Chats */}
+      <Typography variant="overline" sx={{ fontWeight: 800, color: "var(--coop-gray-500)", letterSpacing: 2, mb: 1, display: "block" }}>
+        {t("welcome_recent_chats", "Deine Chats")}
+      </Typography>
+      <Stack spacing={1.5} sx={{ mb: 3 }}>
+        {subscriptions.map((sub) => (
+          <RecentChatCard key={sub.id} subscription={sub} language={i18n.language} onClick={() => navigate(routes.forSubscription(sub))} />
+        ))}
+      </Stack>
+
+      {/* Quick Actions */}
+      <Button
+        fullWidth
+        variant="contained"
+        startIcon={<AddIcon />}
+        onClick={() => setDialogOpen(true)}
+        sx={{
+          backgroundColor: "var(--coop-accent)",
+          color: "var(--coop-black)",
+          border: "3px solid var(--coop-black)",
+          borderRadius: 0,
+          boxShadow: "var(--coop-shadow)",
+          fontWeight: 800,
+          textTransform: "uppercase",
+          py: 1.5,
+          "&:hover": {
+            backgroundColor: "var(--coop-accent-hover)",
+            boxShadow: "var(--coop-shadow-sm)",
+            transform: "translate(2px, 2px)",
+          },
+        }}
+      >
+        {t("welcome_new_chat", "Neuer Chat")}
+      </Button>
+      <SubscribeDialog
+        key={`welcomeSubscribeDialog${dialogKey}`}
+        open={dialogOpen}
+        subscriptions={subscriptions}
+        onCancel={handleSubscribeReset}
+        onSuccess={handleSubscribeSuccess}
+      />
+    </Container>
+  );
+};
+
+const RecentChatCard = ({ subscription, language, onClick }) => {
+  const { t } = useTranslation();
+  const lastNotification = useLiveQuery(
+    () => subscriptionManager.getNotifications(subscription.id).then((notifications) => {
+      const messages = notifications.filter((n) => n.event === "message");
+      return messages.length > 0 ? messages[0] : null;
+    }),
+    [subscription.id]
+  );
+
+  const displayName = topicDisplayName(subscription);
+  const previewText = lastNotification
+    ? `${lastNotification.sender ? lastNotification.sender + ": " : ""}${(lastNotification.message || "").substring(0, 60)}`
+    : t("welcome_no_messages", "Noch keine Nachrichten");
+  const timeText = lastNotification ? formatShortDateTime(lastNotification.time, language) : null;
+
+  return (
+    <ButtonBase
+      onClick={onClick}
+      sx={{
+        display: "block",
+        width: "100%",
+        textAlign: "left",
+        border: "3px solid var(--coop-black)",
+        borderRadius: 0,
+        boxShadow: "var(--coop-shadow-sm)",
+        backgroundColor: "var(--coop-white)",
+        p: 2,
+        transition: "all 0.1s ease",
+        "&:hover": {
+          boxShadow: "var(--coop-shadow)",
+          transform: "translate(-2px, -2px)",
+        },
+        "&:active": {
+          boxShadow: "none",
+          transform: "translate(2px, 2px)",
+        },
+      }}
+    >
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+        <Typography sx={{ fontWeight: 800, fontFamily: "'Space Grotesk', sans-serif", fontSize: "1rem" }}>
+          {displayName}
+        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {subscription.new > 0 && (
+            <Box sx={{
+              backgroundColor: "var(--coop-accent)",
+              color: "var(--coop-black)",
+              fontWeight: 800,
+              fontSize: "0.7rem",
+              minWidth: 22,
+              height: 22,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "2px solid var(--coop-black)",
+            }}>
+              {subscription.new <= 99 ? subscription.new : "99+"}
+            </Box>
+          )}
+          {timeText && (
+            <Typography variant="caption" sx={{ color: "var(--coop-gray-500)", fontWeight: 600 }}>
+              {timeText}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+      <Typography variant="body2" sx={{
+        color: "var(--coop-gray-500)",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}>
+        {previewText}
+      </Typography>
+    </ButtonBase>
+  );
 };
 
 export const SingleSubscription = () => {
@@ -97,7 +264,7 @@ const SingleSubscriptionList = (props) => {
   if (notifications.length === 0) {
     return <NoNotifications subscription={subscription} />;
   }
-  return <NotificationList id={subscription.id} notifications={notifications} messageBar />;
+  return <ChatView notifications={notifications} subscription={subscription} />;
 };
 
 const NotificationList = (props) => {
@@ -124,7 +291,7 @@ const NotificationList = (props) => {
       dataLength={count}
       next={() => setMaxCount((prev) => prev + pageSize)}
       hasMore={count < notifications.length}
-      loader={<>Loading ...</>}
+      loader={<>{t("notifications_loading")}</>}
       scrollThreshold={0.7}
       scrollableTarget="main"
     >
@@ -225,7 +392,7 @@ const MarkdownContent = ({ content }) => {
   return <MarkdownContainer>{reactContent}</MarkdownContainer>;
 };
 
-const NotificationBody = ({ notification }) => {
+export const NotificationBody = ({ notification }) => {
   const displayAsMarkdown = notification.content_type === "text/markdown";
   const formatted = formatMessage(notification);
   if (displayAsMarkdown) {
@@ -353,7 +520,7 @@ const NotificationItem = (props) => {
   );
 };
 
-const Attachment = (props) => {
+export const Attachment = (props) => {
   const { t, i18n } = useTranslation();
   const { attachment } = props;
   const expired = attachment.expires && attachment.expires < Date.now() / 1000;
@@ -485,7 +652,7 @@ const Image = (props) => {
   );
 };
 
-const UserActions = (props) => (
+export const UserActions = (props) => (
   <>
     {props.notification.actions.map((action) => (
       <UserAction key={action.id} notification={props.notification} action={action} onShowSnack={props.onShowSnack} />
@@ -622,64 +789,69 @@ const UserAction = (props) => {
   return null; // Others
 };
 
+const CoopMonogram = () => (
+  <Box
+    component="img"
+    src="/static/images/coop.png"
+    alt="Coop"
+    sx={{
+      width: 64,
+      height: 64,
+      imageRendering: "pixelated",
+      border: "3px solid var(--coop-black)",
+      boxShadow: "2px 2px 0 var(--coop-accent)",
+      mb: 1,
+    }}
+  />
+);
+
 const NoNotifications = (props) => {
   const { t } = useTranslation();
-  const topicUrlResolved = topicUrl(props.subscription.baseUrl, props.subscription.topic);
   return (
     <VerticallyCenteredContainer maxWidth="xs">
+      <CoopMonogram />
       <Typography variant="h5" align="center" sx={{ paddingBottom: 1 }}>
-        <img src={logoOutline} height="64" width="64" alt={t("action_bar_logo_alt")} />
-        <br />
         {t("notifications_none_for_topic_title")}
       </Typography>
       <Paragraph>{t("notifications_none_for_topic_description")}</Paragraph>
-      <Paragraph>
-        {t("notifications_example")}:<br />
-        <tt>
-          {'$ curl -d "Hi" '}
-          {topicUrlResolved}
-        </tt>
-      </Paragraph>
-      <Paragraph>
-        <ForMoreDetails />
-      </Paragraph>
     </VerticallyCenteredContainer>
   );
 };
 
 const NoNotificationsWithoutSubscription = (props) => {
   const { t } = useTranslation();
-  const subscription = props.subscriptions[0];
-  const topicUrlResolved = topicUrl(subscription.baseUrl, subscription.topic);
   return (
     <VerticallyCenteredContainer maxWidth="xs">
+      <CoopMonogram />
       <Typography variant="h5" align="center" sx={{ paddingBottom: 1 }}>
-        <img src={logoOutline} height="64" width="64" alt={t("action_bar_logo_alt")} />
-        <br />
         {t("notifications_none_for_any_title")}
       </Typography>
       <Paragraph>{t("notifications_none_for_any_description")}</Paragraph>
-      <Paragraph>
-        {t("notifications_example")}:<br />
-        <tt>
-          {'$ curl -d "Hi" '}
-          {topicUrlResolved}
-        </tt>
-      </Paragraph>
-      <Paragraph>
-        <ForMoreDetails />
-      </Paragraph>
     </VerticallyCenteredContainer>
   );
 };
 
 const NoSubscriptions = () => {
   const { t } = useTranslation();
+  const { subscriptions } = useOutletContext();
+  const navigate = useNavigate();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogKey, setDialogKey] = useState(0);
+
+  const handleSubscribeReset = () => {
+    setDialogOpen(false);
+    setDialogKey((prev) => prev + 1);
+  };
+
+  const handleSubscribeSuccess = (subscription) => {
+    handleSubscribeReset();
+    navigate(routes.forSubscription(subscription));
+  };
+
   return (
     <VerticallyCenteredContainer maxWidth="xs">
+      <CoopMonogram />
       <Typography variant="h5" align="center" sx={{ paddingBottom: 1 }}>
-        <img src={logoOutline} height="64" width="64" alt={t("action_bar_logo_alt")} />
-        <br />
         {t("notifications_no_subscriptions_title")}
       </Typography>
       <Paragraph>
@@ -687,22 +859,40 @@ const NoSubscriptions = () => {
           linktext: t("nav_button_subscribe"),
         })}
       </Paragraph>
-      <Paragraph>
-        <ForMoreDetails />
-      </Paragraph>
+      <Button
+        variant="contained"
+        startIcon={<AddIcon />}
+        onClick={() => setDialogOpen(true)}
+        sx={{
+          mt: 2,
+          backgroundColor: "var(--coop-accent)",
+          color: "var(--coop-black)",
+          border: "3px solid var(--coop-black)",
+          borderRadius: 0,
+          boxShadow: "var(--coop-shadow)",
+          fontWeight: 800,
+          textTransform: "uppercase",
+          px: 3,
+          py: 1,
+          "&:hover": {
+            backgroundColor: "var(--coop-accent-hover)",
+            boxShadow: "var(--coop-shadow-sm)",
+            transform: "translate(2px, 2px)",
+          },
+        }}
+      >
+        {t("notifications_empty_cta", "Ersten Chat erstellen")}
+      </Button>
+      <SubscribeDialog
+        key={`emptySubscribeDialog${dialogKey}`}
+        open={dialogOpen}
+        subscriptions={subscriptions || []}
+        onCancel={handleSubscribeReset}
+        onSuccess={handleSubscribeSuccess}
+      />
     </VerticallyCenteredContainer>
   );
 };
-
-const ForMoreDetails = () => (
-  <Trans
-    i18nKey="notifications_more_details"
-    components={{
-      websiteLink: <Link href="https://ntfy.sh" target="_blank" rel="noopener" />,
-      docsLink: <Link href="https://ntfy.sh/docs" target="_blank" rel="noopener" />,
-    }}
-  />
-);
 
 const Loading = () => {
   const { t } = useTranslation();

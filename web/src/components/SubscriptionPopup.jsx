@@ -1,6 +1,8 @@
 import * as React from "react";
 import { useContext, useState } from "react";
 import {
+  Alert,
+  Box,
   Button,
   TextField,
   Dialog,
@@ -11,6 +13,7 @@ import {
   InputAdornment,
   Portal,
   Snackbar,
+  Typography,
   useMediaQuery,
   MenuItem,
   IconButton,
@@ -22,14 +25,17 @@ import { useNavigate } from "react-router-dom";
 import {
   Clear,
   ClearAll,
+  ContentCopy,
   Edit,
   EnhancedEncryption,
+  InfoOutlined,
   Lock,
   LockOpen,
   Notifications,
   NotificationsOff,
   RemoveCircle,
   Send,
+  Share,
 } from "@mui/icons-material";
 import subscriptionManager from "../app/SubscriptionManager";
 import DialogFooter from "./DialogFooter";
@@ -48,10 +54,12 @@ export const SubscriptionPopup = (props) => {
   const { account } = useContext(AccountContext);
   const navigate = useNavigate();
   const [displayNameDialogOpen, setDisplayNameDialogOpen] = useState(false);
+  const [chatInfoDialogOpen, setChatInfoDialogOpen] = useState(false);
   const [reserveAddDialogOpen, setReserveAddDialogOpen] = useState(false);
   const [reserveEditDialogOpen, setReserveEditDialogOpen] = useState(false);
   const [reserveDeleteDialogOpen, setReserveDeleteDialogOpen] = useState(false);
   const [showPublishError, setShowPublishError] = useState(false);
+  const [showCopiedSnackbar, setShowCopiedSnackbar] = useState(false);
   const { subscription } = props;
   const placement = props.placement ?? "left";
   const reservations = account?.reservations || [];
@@ -64,6 +72,44 @@ export const SubscriptionPopup = (props) => {
     (config.enable_payments || account?.stats.reservations_remaining === 0);
   const showReservationEdit = config.enable_reservations && !!subscription?.reservation;
   const showReservationDelete = config.enable_reservations && !!subscription?.reservation;
+
+  const handleShareChatId = async () => {
+    const topicId = subscription.topic;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: t("share_chat_id_title", "Chat-ID teilen"),
+          text: t("share_chat_id_text", "Tritt meinem Chat bei! Chat-ID: {{topic}}", { topic: topicId }),
+        });
+      } catch (e) {
+        // User cancelled share or error - fall back to clipboard
+        if (e.name !== "AbortError") {
+          copyToClipboard(topicId);
+          setShowCopiedSnackbar(true);
+        }
+      }
+    } else {
+      copyToClipboard(topicId);
+      setShowCopiedSnackbar(true);
+    }
+    props.onClose();
+  };
+
+  const copyToClipboard = (text) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+  };
 
   const handleChangeDisplayName = async () => {
     setDisplayNameDialogOpen(true);
@@ -97,7 +143,7 @@ export const SubscriptionPopup = (props) => {
       "backups",
       "cron-script",
       "script-error",
-      "phils-automation",
+      "team-updates",
       "mouse",
       "go-rocks",
       "hi-ben",
@@ -109,7 +155,7 @@ export const SubscriptionPopup = (props) => {
       "", // Higher chance of no title
       "Oh my, another test message?",
       "Titles are optional, did you know that?",
-      "ntfy is open source, and will always be free. Cool, right?",
+      "Coop ist Open Source und wird immer kostenlos bleiben!",
       "I don't really like apples",
       "My favorite TV show is The Wire. You should watch it!",
       "You can attach files and URLs to messages too",
@@ -117,19 +163,13 @@ export const SubscriptionPopup = (props) => {
     ])[0];
     const nowSeconds = Math.round(Date.now() / 1000);
     const message = shuffle([
-      `Hello friend, this is a test notification from ntfy web. It's ${formatShortDateTime(
-        nowSeconds,
-        "en-US"
-      )} right now. Is that early or late?`,
-      `So I heard you like ntfy? If that's true, go to GitHub and star it, or to the Play store and rate it. Thanks! Oh yeah, this is a test notification.`,
-      `It's almost like you want to hear what I have to say. I'm not even a machine. I'm just a sentence that Phil typed on a random Thursday.`,
-      `Alright then, it's ${formatShortDateTime(
-        nowSeconds,
-        "en-US"
-      )} already. Boy oh boy, where did the time go? I hope you're alright, friend.`,
-      `There are nine million bicycles in Beijing That's a fact; It's a thing we can't deny. I wonder if that's true ...`,
-      `I'm really excited that you're trying out ntfy. Did you know that there are a few public topics, such as ntfy.sh/stats and ntfy.sh/announcements.`,
-      `It's interesting to hear what people use ntfy for. I've heard people talk about using it for so many cool things. What do you use it for?`,
+      `Hey! Das ist eine Testnachricht von Coop. Es ist gerade ${formatShortDateTime(nowSeconds, "de")}. Alles klar bei dir?`,
+      `Coop ist Open Source - wenn es dir gefaellt, gib uns einen Stern auf GitHub!`,
+      `Das ist eine Testnachricht. Coop laeuft auf deinem eigenen Server - keine Daten verlassen deine Infrastruktur.`,
+      `Es ist schon ${formatShortDateTime(nowSeconds, "de")} - wo ist die Zeit geblieben? Hoffe dir geht's gut!`,
+      `Wusstest du? Du kannst Dateien und Bilder an Nachrichten anhaengen.`,
+      `Coop unterstuetzt Markdown, Tags, Prioritaeten und zeitversetzte Nachrichten.`,
+      `Tipp: Enter sendet die Nachricht, Shift+Enter macht einen Zeilenumbruch.`,
     ])[0];
     try {
       await api.publish(baseUrl, topic, message, {
@@ -153,7 +193,7 @@ export const SubscriptionPopup = (props) => {
   };
 
   const handleUnsubscribe = async () => {
-    console.log(`[SubscriptionPopup] Unsubscribing from ${props.subscription.id}`, props.subscription);
+    console.log(`[SubscriptionPopup] Unsubscribing`);
     await subscriptionManager.remove(props.subscription);
     if (session.exists() && !subscription.internal) {
       try {
@@ -176,6 +216,18 @@ export const SubscriptionPopup = (props) => {
   return (
     <>
       <PopupMenu horizontal={placement} anchorEl={props.anchor} open={!!props.anchor} onClose={props.onClose}>
+        <MenuItem onClick={() => { setChatInfoDialogOpen(true); props.onClose(); }}>
+          <ListItemIcon>
+            <InfoOutlined fontSize="small" />
+          </ListItemIcon>
+          {t("action_bar_chat_info", "Chat-Info")}
+        </MenuItem>
+        <MenuItem onClick={handleShareChatId}>
+          <ListItemIcon>
+            <Share fontSize="small" />
+          </ListItemIcon>
+          {t("action_bar_share_chat_id", "Chat-ID teilen")}
+        </MenuItem>
         <MenuItem onClick={handleChangeDisplayName}>
           <ListItemIcon>
             <Edit fontSize="small" />
@@ -257,7 +309,14 @@ export const SubscriptionPopup = (props) => {
           onClose={() => setShowPublishError(false)}
           message={t("message_bar_error_publishing")}
         />
+        <Snackbar
+          open={showCopiedSnackbar}
+          autoHideDuration={2000}
+          onClose={() => setShowCopiedSnackbar(false)}
+          message={t("share_chat_id_copied", "Chat-ID in Zwischenablage kopiert")}
+        />
         <DisplayNameDialog open={displayNameDialogOpen} subscription={subscription} onClose={() => setDisplayNameDialogOpen(false)} />
+        <ChatInfoDialog open={chatInfoDialogOpen} subscription={subscription} onClose={() => setChatInfoDialogOpen(false)} />
         {showReservationAdd && (
           <ReserveAddDialog
             open={reserveAddDialogOpen}
@@ -325,7 +384,26 @@ const DisplayNameDialog = (props) => {
           onChange={(ev) => setDisplayName(ev.target.value)}
           type="text"
           fullWidth
-          variant="standard"
+          variant="outlined"
+          sx={{
+            mt: 1,
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 0,
+              border: "3px solid var(--coop-black)",
+              boxShadow: "var(--coop-shadow-sm)",
+              "& fieldset": { border: "none" },
+              "&:hover": { boxShadow: "var(--coop-shadow)" },
+              "&.Mui-focused": { boxShadow: "var(--coop-shadow)" },
+            },
+            "& .MuiInputLabel-root": {
+              fontWeight: 600,
+            },
+            "& .MuiInputLabel-shrink": {
+              transform: "translate(14px, -9px) scale(0.75)",
+              backgroundColor: "var(--coop-bg)",
+              padding: "0 6px",
+            },
+          }}
           inputProps={{
             maxLength: 64,
             "aria-label": t("display_name_dialog_placeholder"),
@@ -344,6 +422,105 @@ const DisplayNameDialog = (props) => {
       <DialogFooter status={error}>
         <Button onClick={props.onClose}>{t("common_cancel")}</Button>
         <Button onClick={handleSave}>{t("common_save")}</Button>
+      </DialogFooter>
+    </Dialog>
+  );
+};
+
+const ChatInfoDialog = (props) => {
+  const theme = useTheme();
+  const { t } = useTranslation();
+  const { subscription } = props;
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    const topicId = subscription.topic;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(topicId);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = topicId;
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    }
+    setCopied(true);
+  };
+
+  const handleClose = () => {
+    setCopied(false);
+    props.onClose();
+  };
+
+  return (
+    <Dialog open={props.open} onClose={handleClose} maxWidth="sm" fullWidth fullScreen={fullScreen}>
+      <DialogTitle>{t("chat_info_dialog_title", "Chat-Info")}</DialogTitle>
+      <DialogContent>
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+            {t("chat_info_dialog_created_by", "Erstellt von")}
+          </Typography>
+          <Typography variant="body1">
+            {session.username()}
+          </Typography>
+        </Box>
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+            {t("chat_info_dialog_chat_id_label", "Chat-ID")}
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              border: "3px solid var(--coop-black)",
+              borderRadius: 0,
+              boxShadow: "var(--coop-shadow-sm)",
+              overflow: "hidden",
+            }}
+          >
+            <Typography
+              sx={{
+                flex: 1,
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: "1rem",
+                px: 1.5,
+                py: 1,
+                wordBreak: "break-all",
+                userSelect: "all",
+              }}
+            >
+              {subscription.topic}
+            </Typography>
+            <IconButton
+              onClick={handleCopy}
+              sx={{
+                borderLeft: "3px solid var(--coop-black)",
+                borderRadius: 0,
+                px: 1.5,
+                "&:hover": { backgroundColor: "var(--coop-yellow)" },
+              }}
+              aria-label={t("common_copy_to_clipboard", "In Zwischenablage kopieren")}
+            >
+              <ContentCopy fontSize="small" />
+            </IconButton>
+          </Box>
+        </Box>
+        {copied && (
+          <Alert severity="success" sx={{ mb: 2, borderRadius: 0, border: "3px solid var(--coop-black)" }}>
+            {t("chat_info_dialog_copied", "Chat-ID in Zwischenablage kopiert")}
+          </Alert>
+        )}
+        <DialogContentText>
+          {t("chat_info_dialog_description", "Teile diese Chat-ID mit anderen Personen, damit sie dem Chat beitreten koennen.")}
+        </DialogContentText>
+      </DialogContent>
+      <DialogFooter>
+        <Button onClick={handleClose}>{t("chat_info_dialog_close", "Schliessen")}</Button>
       </DialogFooter>
     </Dialog>
   );
@@ -382,7 +559,7 @@ const LimitReachedChip = () => {
 
 export const ProChip = () => (
   <Chip
-    label="ntfy Pro"
+    label="Coop Pro"
     variant="outlined"
     color="primary"
     sx={{
