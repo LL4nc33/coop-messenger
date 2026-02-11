@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Box, Button, Chip, Container, Fab, Stack, Typography } from "@mui/material";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Box, Button, Chip, Container, Divider, Fab, Stack, Typography } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { useTranslation } from "react-i18next";
 import session from "../app/Session";
@@ -75,6 +75,46 @@ const ChatBubble = React.memo(({ notification }) => {
     </Box>
   );
 });
+
+const isSameDay = (d1, d2) =>
+  d1.getFullYear() === d2.getFullYear() &&
+  d1.getMonth() === d2.getMonth() &&
+  d1.getDate() === d2.getDate();
+
+const getDateLabel = (timestamp, t) => {
+  const msgDate = new Date(timestamp * 1000);
+  const today = new Date();
+  if (isSameDay(msgDate, today)) return t("chat_date_today", "Heute");
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (isSameDay(msgDate, yesterday)) return t("chat_date_yesterday", "Gestern");
+  return msgDate.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+};
+
+const getDateKey = (timestamp) => {
+  const d = new Date(timestamp * 1000);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+};
+
+const DateSeparator = ({ label }) => (
+  <Box sx={{ display: "flex", alignItems: "center", my: 1.5 }}>
+    <Divider sx={{ flexGrow: 1, borderColor: "var(--coop-black)", borderWidth: "1px" }} />
+    <Typography
+      variant="caption"
+      sx={{
+        mx: 2,
+        fontFamily: "var(--coop-font-body)",
+        fontWeight: 600,
+        color: "var(--coop-gray-500)",
+        whiteSpace: "nowrap",
+        fontSize: "0.75rem",
+      }}
+    >
+      {label}
+    </Typography>
+    <Divider sx={{ flexGrow: 1, borderColor: "var(--coop-black)", borderWidth: "1px" }} />
+  </Box>
+);
 
 const SCROLL_THRESHOLD = 150;
 
@@ -176,9 +216,16 @@ const ChatView = ({ notifications, subscription }) => {
         </Box>
       )}
       <Stack spacing={1.5}>
-        {messages.map(notification => (
-          <ChatBubble key={notification.id} notification={notification} />
-        ))}
+        {messages.map((notification, index) => {
+          const showDateSep = index === 0 ||
+            getDateKey(notification.time) !== getDateKey(messages[index - 1].time);
+          return (
+            <React.Fragment key={notification.id}>
+              {showDateSep && <DateSeparator label={getDateLabel(notification.time, t)} />}
+              <ChatBubble notification={notification} />
+            </React.Fragment>
+          );
+        })}
       </Stack>
       <div ref={messagesEndRef} />
 
