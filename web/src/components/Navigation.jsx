@@ -413,16 +413,15 @@ const SubscriptionItem = (props) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
 
   const { subscription } = props;
-  const iconBadge = subscription.new <= 99 ? subscription.new : "99+";
+  const hasUnread = subscription.new > 0;
+  const unreadCount = subscription.new <= 99 ? subscription.new : "99+";
   const displayName = topicDisplayName(subscription);
   const ariaLabel = subscription.state === ConnectionState.Connecting ? `${displayName} (${t("nav_button_connecting")})` : displayName;
   const icon =
     subscription.state === ConnectionState.Connecting ? (
       <CircularProgress size="24px" />
     ) : (
-      <Badge badgeContent={iconBadge} invisible={subscription.new === 0} color="primary">
-        <ChatBubbleOutlineIcon />
-      </Badge>
+      <ChatBubbleOutlineIcon />
     );
 
   // Letzte Nachricht fuer Vorschau laden
@@ -454,7 +453,7 @@ const SubscriptionItem = (props) => {
               <Typography
                 variant="body1"
                 sx={{
-                  fontWeight: subscription.new > 0 ? 700 : 400,
+                  fontWeight: hasUnread ? 700 : 400,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -463,11 +462,31 @@ const SubscriptionItem = (props) => {
               >
                 {displayName}
               </Typography>
-              {timeText && (
-                <Typography variant="caption" sx={{ ml: 1, flexShrink: 0, color: "text.secondary", fontFamily: "monospace", fontSize: "0.7rem" }}>
-                  {timeText}
-                </Typography>
-              )}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0, ml: 1 }}>
+                {timeText && (
+                  <Typography variant="caption" sx={{ color: hasUnread ? "var(--coop-black)" : "text.secondary", fontFamily: "monospace", fontSize: "0.7rem", fontWeight: hasUnread ? 700 : 400 }}>
+                    {timeText}
+                  </Typography>
+                )}
+                {hasUnread && (
+                  <Box sx={{
+                    backgroundColor: "var(--coop-pink)",
+                    color: "#fff",
+                    border: "2px solid var(--coop-black)",
+                    fontFamily: "var(--coop-font-display)",
+                    fontWeight: 700,
+                    fontSize: "0.65rem",
+                    minWidth: 20,
+                    height: 20,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    px: 0.5,
+                  }}>
+                    {unreadCount}
+                  </Box>
+                )}
+              </Box>
             </Box>
           }
           secondary={previewText}
@@ -477,7 +496,8 @@ const SubscriptionItem = (props) => {
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
               fontSize: "0.8rem",
-              color: "text.secondary",
+              color: hasUnread ? "var(--coop-black)" : "text.secondary",
+              fontWeight: hasUnread ? 600 : 400,
             },
           }}
         />
