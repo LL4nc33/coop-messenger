@@ -51,7 +51,7 @@ Coop is a private messenger you host yourself. Built as a fork of the excellent 
 - **Notification control** -- Mute chats, own messages don't trigger notifications
 - **Theme customization** -- Light/dark mode with configurable accent colors
 - **Share chat IDs** -- Users can share their chat ID via native share or clipboard
-- **ntfy-compatible API** -- Works with existing [ntfy Android](https://github.com/binwiederhier/ntfy-android) and [iOS](https://github.com/binwiederhier/ntfy-ios) apps
+- **Self-contained** -- Everything runs on your server, no third-party app dependencies
 
 ## Quick Start
 
@@ -130,12 +130,7 @@ For all configuration options, see the [ntfy documentation](https://docs.ntfy.sh
 
 ### Mobile Apps
 
-Since Coop is API-compatible with ntfy, you can use the existing mobile apps:
-
-- **Android**: [ntfy on Google Play](https://play.google.com/store/apps/details?id=io.heckel.ntfy) or [F-Droid](https://f-droid.org/en/packages/io.heckel.ntfy/)
-- **iOS**: [ntfy on App Store](https://apps.apple.com/us/app/ntfy/id1625396347)
-
-Simply point the app at your Coop server URL and log in with your credentials.
+Coop is a PWA (Progressive Web App) and can be installed directly from the browser on any device -- no app store needed. Native Android and iOS apps are on the [roadmap](docs/ROADMAP.md).
 
 ## Tech Stack
 
