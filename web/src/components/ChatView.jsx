@@ -187,10 +187,75 @@ const ChatAttachment = ({ attachment }) => {
   );
 };
 
+const URL_REGEX = /\bhttps?:\/\/[^\s]+/gi;
+
+const extractUrls = (text) => {
+  if (!text) return [];
+  const matches = text.match(URL_REGEX);
+  if (!matches) return [];
+  // Deduplicate and limit to 3
+  return [...new Set(matches)].slice(0, 3);
+};
+
+const getDomain = (url) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+};
+
+const LinkPreviewBlock = ({ urls }) => {
+  if (!urls || urls.length === 0) return null;
+  return (
+    <Box sx={{ mt: 0.5, display: "flex", flexDirection: "column", gap: 0.5 }}>
+      {urls.map((url) => (
+        <Link
+          key={url}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          underline="none"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            p: 0.75,
+            border: "2px solid var(--coop-gray-300)",
+            backgroundColor: "var(--coop-gray-100)",
+            color: "var(--coop-black)",
+            fontSize: "0.75rem",
+            fontFamily: "var(--coop-font-body)",
+            overflow: "hidden",
+            "&:hover": {
+              borderColor: "var(--coop-accent)",
+              backgroundColor: "var(--coop-gray-200)",
+            },
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={{
+              fontWeight: 700,
+              color: "var(--coop-accent)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {getDomain(url)}
+          </Typography>
+        </Link>
+      ))}
+    </Box>
+  );
+};
+
 const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionToggle, onReactionAdd }) => {
   const { t, i18n } = useTranslation();
   const isOwn = notification.sender === session.username();
   const otherTags = unmatchedTags(notification.tags);
+  const urls = extractUrls(notification.message);
 
   return (
     <Box
@@ -240,6 +305,10 @@ const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionTog
           </Typography>
 
           {notification.attachment && <ChatAttachment attachment={notification.attachment} />}
+
+          {urls.length > 0 && !notification.attachment && (
+            <LinkPreviewBlock urls={urls} />
+          )}
 
           {otherTags.length > 0 && (
             <Box sx={{ mt: 0.5 }}>
