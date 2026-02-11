@@ -16,4 +16,4 @@ assignees: ''
 **Environment**
 - OS: [e.g. Ubuntu 22.04, Windows 11]
 - Docker version: [e.g. 24.0]
-- Coop version: [e.g. 0.4.0]
+- Coop version: [e.g. 0.0.1.4]

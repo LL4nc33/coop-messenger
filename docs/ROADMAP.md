@@ -6,7 +6,7 @@
 
 ## Version History
 
-### v0.1.0 -- Foundation (completed)
+### v0.0.1.1 -- Foundation (completed)
 - Forked ntfy v2.17.0 as base
 - Replaced notification-centric UI with chat-oriented design
 - Built ChatView with message bubbles (own vs. others)
@@ -16,20 +16,20 @@
 - Switched fonts to Space Grotesk, DM Sans, JetBrains Mono
 - Rewrote all i18n to German (en.json as single source)
 
-### v0.2.0 -- Invite System (completed)
+### v0.0.1.2 -- Invite System (completed)
 - Invite creation (admin): topics, max uses, expiry
 - Invite link page: registration form for new users
 - Invite list and deletion in Admin Panel
 - DB migration 14 -> 15 (sender_name + invites table)
 
-### v0.3.0 -- Access Control & Admin (completed)
+### v0.0.1.3 -- Access Control & Admin (completed)
 - Invite join for existing users (logged-in users can accept invites)
 - Join request system (users request access, admins approve/deny)
 - Admin Panel with 3 tabs: Users, Chats + Join Requests, Invites
 - DB migration 15 -> 16 (join_requests table)
 - `auth-default-access: deny-all` as default configuration
 
-### v0.4.0 -- UX & Polish (current)
+### v0.0.1.4 -- UX & Polish (current)
 - Welcome/dashboard page with chat cards and greeting
 - Theme toggle (light/dark) with configurable accent colors
 - Notification fix: own messages don't trigger notifications or unread badges
@@ -43,7 +43,7 @@
 
 ## Upcoming
 
-### v0.5.0 -- UX Quick Wins
+### v0.0.1.5 -- UX Quick Wins
 - [ ] Mobile drawer auto-close after navigation
 - [ ] Chat sorting by most recent activity
 - [ ] Smart auto-scroll (only when at bottom)
@@ -52,20 +52,20 @@
 - [ ] Send feedback (animation/sound)
 - [ ] Typing indicators (stretch goal)
 
-### v0.6.0 -- Rich Messages
+### v0.0.1.6 -- Rich Messages
 - [ ] Image/media previews in chat
 - [ ] Link previews with metadata
 - [ ] Markdown support in messages
 - [ ] Message reactions
 - [ ] Reply/quote messages
 
-### v0.7.0 -- User Profiles
+### v0.0.1.7 -- User Profiles
 - [ ] User avatars (upload + display)
 - [ ] User status/bio
 - [ ] "Last seen" indicator
 - [ ] Member list per chat
 
-### v0.8.0 -- Standalone API & Native Apps
+### v0.0.1.8 -- Standalone API & Native Apps
 - [ ] Custom Coop API (breaking ntfy client compatibility)
 - [ ] Coop Android app (standalone, not an ntfy fork)
 - [ ] Coop iOS app (standalone)
