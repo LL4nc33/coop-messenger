@@ -374,9 +374,26 @@ const UpgradeBanner = ({ mode }) => {
 };
 
 const SubscriptionList = (props) => {
-  const sortedSubscriptions = props.subscriptions
-    .filter((s) => !s.internal)
-    .sort((a, b) => (topicUrl(a.baseUrl, a.topic) < topicUrl(b.baseUrl, b.topic) ? -1 : 1));
+  const filteredSubscriptions = props.subscriptions.filter((s) => !s.internal);
+
+  // Load last message timestamp per subscription for sorting by activity
+  const lastMessageTimes = useLiveQuery(async () => {
+    const times = {};
+    for (const sub of filteredSubscriptions) {
+      const notifications = await subscriptionManager.getNotifications(sub.id);
+      const messages = notifications.filter((n) => n.event === "message");
+      times[sub.id] = messages.length > 0 ? messages[0].time : 0;
+    }
+    return times;
+  }, [filteredSubscriptions.map((s) => s.id).join(",")]);
+
+  const sortedSubscriptions = [...filteredSubscriptions].sort((a, b) => {
+    const timeA = lastMessageTimes?.[a.id] || 0;
+    const timeB = lastMessageTimes?.[b.id] || 0;
+    if (timeA !== timeB) return timeB - timeA; // Newest first
+    return topicUrl(a.baseUrl, a.topic) < topicUrl(b.baseUrl, b.topic) ? -1 : 1; // Fallback: alphabetical
+  });
+
   return (
     <>
       {sortedSubscriptions.map((subscription) => (
