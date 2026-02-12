@@ -15,6 +15,7 @@ class ConnectionManager {
     this.connections = new Map(); // ConnectionId -> Connection (hash, see below)
     this.stateListener = null; // Fired when connection state changes
     this.messageListener = null; // Fired when new notifications arrive
+    this.socialEventListener = null; // Fired when social events arrive (typing, etc.)
   }
 
   registerStateListener(listener) {
@@ -31,6 +32,14 @@ class ConnectionManager {
 
   resetMessageListener() {
     this.messageListener = null;
+  }
+
+  registerSocialEventListener(listener) {
+    this.socialEventListener = listener;
+  }
+
+  resetSocialEventListener() {
+    this.socialEventListener = null;
   }
 
   /**
@@ -70,7 +79,8 @@ class ConnectionManager {
           user,
           since,
           (subId, notification) => this.notificationReceived(subId, notification),
-          (subId, state) => this.stateChanged(subId, state)
+          (subId, state) => this.stateChanged(subId, state),
+          (subId, event) => this.socialEventReceived(subId, event)
         );
         this.connections.set(connectionId, connection);
         console.log(`[ConnectionManager] Starting new connection ${connectionId}`);
@@ -103,6 +113,16 @@ class ConnectionManager {
         this.messageListener(subscriptionId, notification);
       } catch (e) {
         console.error(`[ConnectionManager] Error handling notification for ${subscriptionId}`, e);
+      }
+    }
+  }
+
+  socialEventReceived(subscriptionId, event) {
+    if (this.socialEventListener) {
+      try {
+        this.socialEventListener(subscriptionId, event);
+      } catch (e) {
+        console.error(`[ConnectionManager] Error handling social event for ${subscriptionId}`, e);
       }
     }
   }

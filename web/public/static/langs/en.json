@@ -582,5 +582,15 @@
   "group_members_required": "Mindestens ein Mitglied auswaehlen",
   "group_create_error": "Fehler beim Erstellen der Gruppe",
   "group_create_button": "Gruppe erstellen",
-  "group_no_contacts": "Keine Kontakte vorhanden"
+  "group_no_contacts": "Keine Kontakte vorhanden",
+  "chat_nudge_button": "Angurren",
+  "nudge_sent_self": "Du hast gegurrt!",
+  "nudge_received": "{sender} hat dich angegurrt!",
+  "typing_one": "{user} pickt...",
+  "typing_two": "{user1} und {user2} picken...",
+  "typing_many": "Mehrere picken...",
+  "command_gurr": "Angurren (Nudge)",
+  "command_status": "Status setzen",
+  "command_flieg": "Chat verlassen",
+  "command_mitglieder": "Mitgliederliste oeffnen"
 }

@@ -11,6 +11,8 @@ const Messaging = (props) => {
           onSend={async (message, options) => {
             await api.publish(subscription.baseUrl, subscription.topic, message, options);
           }}
+          topic={subscription.topic}
+          onLocalCommand={props.onLocalCommand}
         />
       )}
     </>

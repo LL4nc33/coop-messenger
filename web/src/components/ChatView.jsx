@@ -3,9 +3,11 @@ import { Box, Button, ButtonBase, Chip, Container, Divider, Fab, IconButton, Lin
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import ReplyIcon from "@mui/icons-material/Reply";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import { useTranslation } from "react-i18next";
 import session from "../app/Session";
 import userManager from "../app/UserManager";
+import connectionManager from "../app/ConnectionManager";
 import { formatBytes, formatShortDateTime, maybeWithAuth, unmatchedTags } from "../app/utils";
 import { formatTitle, isImage } from "../app/notificationUtils";
 import { NotificationBody, UserActions } from "./Notifications";
@@ -407,6 +409,85 @@ const DateSeparator = ({ label }) => (
   </Box>
 );
 
+const NudgeBubble = React.memo(({ notification, profilesCache, onAvatarClick }) => {
+  const { t } = useTranslation();
+  const isOwn = notification.sender === session.username();
+  const senderProfile = profilesCache?.[notification.sender];
+  const displayName = senderProfile?.display_name || notification.sender;
+
+  return (
+    <Box
+      id={`msg-${notification.id}`}
+      className="coop-nudge"
+      sx={{
+        display: "flex",
+        flexDirection: isOwn ? "row-reverse" : "row",
+        alignItems: "center",
+        gap: 1,
+        maxWidth: "100%",
+      }}
+    >
+      {!isOwn && notification.sender && (
+        <UserAvatar
+          username={notification.sender}
+          displayName={senderProfile?.display_name}
+          avatarUrl={senderProfile?.avatar_url}
+          size="sm"
+          onClick={() => onAvatarClick?.(notification.sender)}
+        />
+      )}
+      <Box sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
+        px: 2,
+        py: 1,
+        border: "3px solid var(--coop-black)",
+        backgroundColor: "var(--coop-yellow)",
+        boxShadow: "var(--coop-shadow)",
+        fontWeight: 700,
+      }}>
+        <NotificationsActiveIcon sx={{ fontSize: 20 }} />
+        <Typography variant="body2" sx={{ fontWeight: 700, fontFamily: "var(--coop-font-display)" }}>
+          {isOwn
+            ? t("nudge_sent_self", "Du hast gegurrt!")
+            : t("nudge_received", "{sender} hat dich angegurrt!").replace("{sender}", displayName)
+          }
+        </Typography>
+      </Box>
+    </Box>
+  );
+});
+
+const TypingIndicator = ({ typingUsers }) => {
+  const { t } = useTranslation();
+  if (!typingUsers || typingUsers.length === 0) return null;
+
+  let label;
+  if (typingUsers.length === 1) {
+    label = t("typing_one", "{user} pickt...").replace("{user}", typingUsers[0]);
+  } else if (typingUsers.length === 2) {
+    label = t("typing_two", "{user1} und {user2} picken...")
+      .replace("{user1}", typingUsers[0])
+      .replace("{user2}", typingUsers[1]);
+  } else {
+    label = t("typing_many", "Mehrere picken...");
+  }
+
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 2, py: 0.5 }}>
+      <Box sx={{ display: "flex", gap: "3px" }}>
+        <Box className="coop-typing-dot" sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--coop-gray-500)" }} />
+        <Box className="coop-typing-dot" sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--coop-gray-500)" }} />
+        <Box className="coop-typing-dot" sx={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--coop-gray-500)" }} />
+      </Box>
+      <Typography variant="caption" sx={{ color: "var(--coop-gray-500)", fontStyle: "italic" }}>
+        {label}
+      </Typography>
+    </Box>
+  );
+};
+
 const SCROLL_THRESHOLD = 150;
 
 const isNearBottom = (container) => {
@@ -426,6 +507,43 @@ const ChatView = ({ notifications, subscription }) => {
   const [reactionsMap, setReactionsMap] = useState({});
   const [profilesCache, setProfilesCache] = useState({});
   const [profileUser, setProfileUser] = useState(null);
+  const [typingUsers, setTypingUsers] = useState([]);
+  const typingTimersRef = useRef({});
+
+  // Listen for typing events via ConnectionManager
+  useEffect(() => {
+    if (!subscription) return;
+    const handler = (subId, event) => {
+      if (event.event !== "coop_typing") return;
+      if (event.topic !== subscription.topic) return;
+      const sender = event.sender;
+      if (!sender || sender === session.username()) return;
+
+      // Add/refresh typing user
+      setTypingUsers((prev) => {
+        if (!prev.includes(sender)) return [...prev, sender];
+        return prev;
+      });
+
+      // Clear existing timer for this user
+      if (typingTimersRef.current[sender]) {
+        clearTimeout(typingTimersRef.current[sender]);
+      }
+      // Remove after 5 seconds
+      typingTimersRef.current[sender] = setTimeout(() => {
+        setTypingUsers((prev) => prev.filter((u) => u !== sender));
+        delete typingTimersRef.current[sender];
+      }, 5000);
+    };
+
+    connectionManager.registerSocialEventListener(handler);
+    return () => {
+      connectionManager.resetSocialEventListener();
+      // Cleanup timers
+      Object.values(typingTimersRef.current).forEach(clearTimeout);
+      typingTimersRef.current = {};
+    };
+  }, [subscription?.topic]);
 
   // Load profiles for topic members
   useEffect(() => {
@@ -452,7 +570,7 @@ const ChatView = ({ notifications, subscription }) => {
     loadProfiles();
   }, [subscription?.baseUrl, subscription?.topic]);
 
-  const allMessages = notifications.filter(n => n.event === "message");
+  const allMessages = notifications.filter(n => n.event === "message" || n.event === "coop_nudge");
   const messages = allMessages.length > maxCount
     ? allMessages.slice(0, maxCount).reverse()
     : [...allMessages].reverse();
@@ -632,19 +750,28 @@ const ChatView = ({ notifications, subscription }) => {
           return (
             <React.Fragment key={notification.id}>
               {showDateSep && <DateSeparator label={getDateLabel(notification.time, t)} />}
-              <ChatBubble
-                notification={notification}
-                onReply={handleReply}
-                reactions={reactionsMap[notification.id]}
-                onReactionToggle={handleReactionToggle}
-                onReactionAdd={handleReactionToggle}
-                profilesCache={profilesCache}
-                onAvatarClick={setProfileUser}
-              />
+              {notification.event === "coop_nudge" ? (
+                <NudgeBubble
+                  notification={notification}
+                  profilesCache={profilesCache}
+                  onAvatarClick={setProfileUser}
+                />
+              ) : (
+                <ChatBubble
+                  notification={notification}
+                  onReply={handleReply}
+                  reactions={reactionsMap[notification.id]}
+                  onReactionToggle={handleReactionToggle}
+                  onReactionAdd={handleReactionToggle}
+                  profilesCache={profilesCache}
+                  onAvatarClick={setProfileUser}
+                />
+              )}
             </React.Fragment>
           );
         })}
       </Stack>
+      <TypingIndicator typingUsers={typingUsers} />
       <div ref={messagesEndRef} />
 
       {/* "Neue Nachrichten" floating button */}

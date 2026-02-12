@@ -62,6 +62,7 @@ type Server struct {
 	stripe            stripeAPI                           // Stripe API, can be replaced with a mock
 	priceCache        *util.LookupCache[map[string]int64] // Stripe price ID -> price as cents (USD implied!)
 	metricsHandler    http.Handler                        // Handles /metrics if enable-metrics set, and listen-metrics-http not set
+	socialRateLimiter *socialRateLimiter                  // Rate limiter for typing/nudge events
 	closeChan         chan bool
 	mu                sync.RWMutex
 }
@@ -242,8 +243,9 @@ func New(conf *Config) (*Server, error) {
 		userManager:     userManager,
 		messages:        messages,
 		messagesHistory: []int64{messages},
-		visitors:        make(map[string]*visitor),
-		stripe:          stripe,
+		visitors:          make(map[string]*visitor),
+		stripe:            stripe,
+		socialRateLimiter: newSocialRateLimiter(),
 	}
 	s.priceCache = util.NewLookupCache(s.fetchStripePrices, conf.StripePriceCacheDuration)
 	return s, nil
@@ -621,6 +623,13 @@ func (s *Server) handleInternal(w http.ResponseWriter, r *http.Request, v *visit
 		return s.ensureUser(s.handleTopicMetaGet)(w, r, v)
 	} else if r.Method == http.MethodPatch && strings.HasPrefix(r.URL.Path, "/v1/coop/topics/") && strings.HasSuffix(r.URL.Path, "/meta") {
 		return s.ensureUser(s.handleTopicMetaUpdate)(w, r, v)
+	// Coop: Social (Typing, Nudge, Commands)
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/coop/typing" {
+		return s.ensureUser(s.handleTypingEvent)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/coop/nudge" {
+		return s.ensureUser(s.handleNudge)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/coop/commands" {
+		return s.ensureUser(s.handleSlashCommand)(w, r, v)
 	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/join-requests" {
 		return s.ensureUser(s.limitRequests(s.handleJoinRequestCreate))(w, r, v)
 	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/join-requests" {

@@ -468,7 +468,7 @@ func (c *messageCache) addMessages(ms []*message) error {
 	}
 	defer stmt.Close()
 	for _, m := range ms {
-		if m.Event != messageEvent && m.Event != messageDeleteEvent && m.Event != messageClearEvent {
+		if m.Event != messageEvent && m.Event != messageDeleteEvent && m.Event != messageClearEvent && m.Event != coopNudgeEvent {
 			return errUnexpectedMessageType
 		}
 		published := m.Time <= time.Now().Unix()

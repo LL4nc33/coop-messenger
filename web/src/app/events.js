@@ -8,8 +8,15 @@ export const EVENT_MESSAGE_DELETE = "message_delete";
 export const EVENT_MESSAGE_CLEAR = "message_clear";
 export const EVENT_POLL_REQUEST = "poll_request";
 
+// Coop custom event types
+export const EVENT_COOP_TYPING = "coop_typing";
+export const EVENT_COOP_NUDGE = "coop_nudge";
+
 export const WEBPUSH_EVENT_MESSAGE = "message";
 export const WEBPUSH_EVENT_SUBSCRIPTION_EXPIRING = "subscription_expiring";
 
 // Check if an event is a notification event (message, delete, or read)
-export const isNotificationEvent = (event) => event === EVENT_MESSAGE || event === EVENT_MESSAGE_DELETE || event === EVENT_MESSAGE_CLEAR;
+export const isNotificationEvent = (event) => event === EVENT_MESSAGE || event === EVENT_MESSAGE_DELETE || event === EVENT_MESSAGE_CLEAR || event === EVENT_COOP_NUDGE;
+
+// Check if an event is a coop social event (typing, nudge)
+export const isCoopSocialEvent = (event) => event === EVENT_COOP_TYPING;
