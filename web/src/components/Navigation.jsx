@@ -419,12 +419,6 @@ const SubscriptionItem = (props) => {
   const unreadCount = subscription.new <= 99 ? subscription.new : "99+";
   const displayName = topicDisplayName(subscription);
   const ariaLabel = subscription.state === ConnectionState.Connecting ? `${displayName} (${t("nav_button_connecting")})` : displayName;
-  const lastSender = lastNotification?.sender;
-  const sidebarAvatar = subscription.state === ConnectionState.Connecting ? (
-    <CircularProgress size="24px" />
-  ) : (
-    <UserAvatar username={lastSender || displayName} size="sm" />
-  );
 
   // Letzte Nachricht fuer Vorschau laden
   const lastNotification = useLiveQuery(
@@ -433,6 +427,13 @@ const SubscriptionItem = (props) => {
       return messages.length > 0 ? messages[0] : null;
     }),
     [subscription.id]
+  );
+
+  const lastSender = lastNotification?.sender;
+  const sidebarAvatar = subscription.state === ConnectionState.Connecting ? (
+    <CircularProgress size="24px" />
+  ) : (
+    <UserAvatar username={lastSender || displayName} size="sm" />
   );
 
   const previewText = lastNotification
