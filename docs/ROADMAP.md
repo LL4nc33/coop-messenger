@@ -52,14 +52,14 @@
 
 > Coop soll sich anfühlen wie ein richtiger Messenger, nicht wie ein Notification-Tool.
 
-### v0.0.1.7 — User Profiles
-- [ ] User avatars (upload, crop, display in bubbles + sidebar)
-- [ ] Display name (editable, separate from username)
-- [ ] User bio/status ("Verfügbar", "Beschäftigt", custom text)
-- [ ] "Zuletzt online" indicator
-- [ ] Member list per chat (slide-out panel or modal)
-- [ ] Profile page/modal (click on avatar → see profile)
-- [ ] DB migration 17→18 (user_profiles table: avatar_path, display_name, bio, last_seen)
+### v0.0.1.7 — User Profiles ✅
+- [x] User avatars (upload/delete, display in bubbles + sidebar)
+- [x] Display name (editable, separate from username)
+- [x] User bio/status ("Verfügbar", "Beschäftigt", custom text)
+- [x] "Zuletzt online" indicator (online/recently/offline)
+- [x] Member list per chat (slide-out drawer with People icon)
+- [x] Profile page/modal (click on avatar → see profile, edit own)
+- [x] DB migration 6→7 in user.db (user_profile table: display_name, bio, avatar_id, last_seen)
 
 ### v0.0.1.8 — Group Chat UX
 - [ ] Group names and descriptions (editable by creator/admin)
