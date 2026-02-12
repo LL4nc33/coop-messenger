@@ -24,6 +24,8 @@ import (
 	"heckel.io/ntfy/v2/util"
 )
 
+const userEveryone = "everyone"
+
 func init() {
 	commands = append(commands, cmdServe)
 }
