@@ -1,6 +1,6 @@
 import { AppBar, Toolbar, IconButton, Typography, Box, MenuItem, Button, Divider, ListItemIcon, Tooltip, useTheme, useMediaQuery } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
@@ -20,7 +20,7 @@ import { topicDisplayName, darkModeEnabled } from "../app/utils";
 import Navigation from "./Navigation";
 import accountApi from "../app/AccountApi";
 import PopupMenu from "./PopupMenu";
-import MemberList from "./MemberList";
+const MemberList = lazy(() => import("./MemberList"));
 import { SubscriptionPopup } from "./SubscriptionPopup";
 import { useIsLaunchedPWA } from "./hooks";
 import prefs, { THEME } from "../app/Prefs";
@@ -164,7 +164,11 @@ const SettingsIcons = (props) => {
         </IconButton>
       </Tooltip>
       <SubscriptionPopup subscription={subscription} anchor={anchorEl} placement="right" onClose={() => setAnchorEl(null)} />
-      <MemberList open={memberListOpen} onClose={() => setMemberListOpen(false)} topic={subscription.topic} />
+      {memberListOpen && (
+        <Suspense fallback={null}>
+          <MemberList open={memberListOpen} onClose={() => setMemberListOpen(false)} topic={subscription.topic} />
+        </Suspense>
+      )}
     </>
   );
 };
