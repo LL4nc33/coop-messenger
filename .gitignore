@@ -36,6 +36,7 @@ attachments/
 .claude/
 .claude-plugin/
 .playwright-mcp/
+docs/PHASE*-PROMPT.md
 
 # OS files
 Thumbs.db

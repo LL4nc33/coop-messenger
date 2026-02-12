@@ -19,19 +19,24 @@ import {
   useTheme,
 } from "@mui/material";
 import * as React from "react";
-import { useContext, useState, useRef, useEffect, useCallback } from "react";
+import { useContext, useState, useRef, useEffect, useCallback, lazy, Suspense } from "react";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import Person from "@mui/icons-material/Person";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import AddIcon from "@mui/icons-material/Add";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChatBubble, Home, MoreVert, NotificationsOffOutlined, Close } from "@mui/icons-material";
 import ArticleIcon from "@mui/icons-material/Article";
 import { Trans, useTranslation } from "react-i18next";
 import CelebrationIcon from "@mui/icons-material/Celebration";
 import SubscribeDialog from "./SubscribeDialog";
-import { formatShortDateTime, topicDisplayName, topicUrl } from "../app/utils";
+import UserAvatar from "./UserAvatar";
+const UserProfile = lazy(() => import("./UserProfile"));
+const ContactList = lazy(() => import("./ContactList"));
+const GroupCreate = lazy(() => import("./GroupCreate"));
+import { formatShortDateTime, topicDisplayName, topicUrl, maybeWithBearerAuth } from "../app/utils";
 import routes from "./routes";
 import { ConnectionState } from "../app/Connection";
 import subscriptionManager from "../app/SubscriptionManager";
@@ -116,6 +121,28 @@ const NavList = (props) => {
   const [subscribeDialogKey, setSubscribeDialogKey] = useState(0);
   const [subscribeDialogOpen, setSubscribeDialogOpen] = useState(false);
   const [versionChanged, setVersionChanged] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [contactsOpen, setContactsOpen] = useState(false);
+  const [groupCreateOpen, setGroupCreateOpen] = useState(false);
+  const [ownProfile, setOwnProfile] = useState(null);
+
+  useEffect(() => {
+    if (!session.exists()) return;
+    const fetchOwnProfile = async () => {
+      try {
+        const url = `${config.base_url}/v1/coop/profile`;
+        const headers = maybeWithBearerAuth({}, session.token());
+        const response = await fetch(url, { headers });
+        if (response.ok) {
+          const data = await response.json();
+          setOwnProfile(data);
+        }
+      } catch (e) {
+        console.warn("[Navigation] Failed to load own profile", e);
+      }
+    };
+    fetchOwnProfile();
+  }, []);
 
   const handleVersionChange = () => {
     setVersionChanged(true);
@@ -238,16 +265,24 @@ const NavList = (props) => {
               </ListItemIcon>
               <ListItemText primary={t("nav_button_all_notifications")} />
             </ListItemButton>
-            <SubscriptionList subscriptions={props.subscriptions} selectedSubscription={props.selectedSubscription} />
+            <SubscriptionList subscriptions={props.subscriptions} selectedSubscription={props.selectedSubscription} onMobileDrawerToggle={props.onMobileDrawerToggle} />
             <Divider sx={{ my: 1 }} />
           </>
         )}
         {session.exists() && (
-          <ListItemButton onClick={handleAccountClick} selected={location.pathname === routes.account}>
+          <ListItemButton onClick={() => setProfileOpen(true)}>
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <UserAvatar username={session.username()} displayName={ownProfile?.display_name} avatarUrl={ownProfile?.avatar_url} size="sm" />
+            </ListItemIcon>
+            <ListItemText primary={t("nav_button_my_profile", "Mein Profil")} />
+          </ListItemButton>
+        )}
+        {session.exists() && (
+          <ListItemButton onClick={() => setContactsOpen(true)}>
             <ListItemIcon>
               <Person />
             </ListItemIcon>
-            <ListItemText primary={t("nav_button_account")} />
+            <ListItemText primary={t("nav_button_contacts", "Kontakte")} />
           </ListItemButton>
         )}
         {account?.role === "admin" && (
@@ -270,7 +305,7 @@ const NavList = (props) => {
           </ListItemIcon>
           <ListItemText primary={t("nav_button_documentation")} />
         </ListItemButton>
-        <Box sx={{ px: 1.5, py: 1 }}>
+        <Box sx={{ px: 1.5, py: 1, display: "flex", gap: 1 }}>
           <Button
             fullWidth
             variant="contained"
@@ -299,6 +334,36 @@ const NavList = (props) => {
           >
             {t("nav_button_subscribe")}
           </Button>
+          {session.exists() && (
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<GroupAddIcon />}
+              onClick={() => setGroupCreateOpen(true)}
+              sx={{
+                backgroundColor: "var(--coop-white)",
+                color: "var(--coop-black)",
+                border: "3px solid var(--coop-black)",
+                borderRadius: 0,
+                boxShadow: "var(--coop-shadow)",
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                py: 1.2,
+                "&:hover": {
+                  backgroundColor: "var(--coop-gray-100)",
+                  boxShadow: "var(--coop-shadow-hover)",
+                  transform: "translate(-2px, -2px)",
+                },
+                "&:active": {
+                  boxShadow: "none",
+                  transform: "translate(4px, 4px)",
+                },
+              }}
+            >
+              {t("nav_button_new_group", "Neue Gruppe")}
+            </Button>
+          )}
         </Box>
         {showUpgradeBanner && (
           // The text background gradient didn't seem to do well with switching between light/dark mode,
@@ -313,6 +378,44 @@ const NavList = (props) => {
         onCancel={handleSubscribeReset}
         onSuccess={handleSubscribeSubmit}
       />
+      {profileOpen && (
+        <Suspense fallback={null}>
+          <UserProfile
+            open={profileOpen}
+            onClose={() => setProfileOpen(false)}
+            username={session.username()}
+          />
+        </Suspense>
+      )}
+      {contactsOpen && (
+        <Suspense fallback={null}>
+          <ContactList
+            open={contactsOpen}
+            onClose={() => setContactsOpen(false)}
+            onStartDM={(topic) => {
+              // Subscribe to the DM topic and navigate
+              const baseUrl = config.base_url;
+              subscriptionManager.add(baseUrl, topic).then((subscription) => {
+                navigate(routes.forSubscription(subscription));
+              });
+            }}
+          />
+        </Suspense>
+      )}
+      {groupCreateOpen && (
+        <Suspense fallback={null}>
+          <GroupCreate
+            open={groupCreateOpen}
+            onClose={() => setGroupCreateOpen(false)}
+            onCreated={(topic) => {
+              const baseUrl = config.base_url;
+              subscriptionManager.add(baseUrl, topic).then((subscription) => {
+                navigate(routes.forSubscription(subscription));
+              });
+            }}
+          />
+        </Suspense>
+      )}
     </>
   );
 };
@@ -374,9 +477,26 @@ const UpgradeBanner = ({ mode }) => {
 };
 
 const SubscriptionList = (props) => {
-  const sortedSubscriptions = props.subscriptions
-    .filter((s) => !s.internal)
-    .sort((a, b) => (topicUrl(a.baseUrl, a.topic) < topicUrl(b.baseUrl, b.topic) ? -1 : 1));
+  const filteredSubscriptions = props.subscriptions.filter((s) => !s.internal);
+
+  // Load last message timestamp per subscription for sorting by activity
+  const lastMessageTimes = useLiveQuery(async () => {
+    const times = {};
+    for (const sub of filteredSubscriptions) {
+      const notifications = await subscriptionManager.getNotifications(sub.id);
+      const messages = notifications.filter((n) => n.event === "message");
+      times[sub.id] = messages.length > 0 ? messages[0].time : 0;
+    }
+    return times;
+  }, [filteredSubscriptions.map((s) => s.id).join(",")]);
+
+  const sortedSubscriptions = [...filteredSubscriptions].sort((a, b) => {
+    const timeA = lastMessageTimes?.[a.id] || 0;
+    const timeB = lastMessageTimes?.[b.id] || 0;
+    if (timeA !== timeB) return timeB - timeA; // Newest first
+    return topicUrl(a.baseUrl, a.topic) < topicUrl(b.baseUrl, b.topic) ? -1 : 1; // Fallback: alphabetical
+  });
+
   return (
     <>
       {sortedSubscriptions.map((subscription) => (
@@ -384,6 +504,7 @@ const SubscriptionList = (props) => {
           key={subscription.id}
           subscription={subscription}
           selected={props.selectedSubscription && props.selectedSubscription.id === subscription.id}
+          onMobileDrawerToggle={props.onMobileDrawerToggle}
         />
       ))}
     </>
@@ -396,17 +517,10 @@ const SubscriptionItem = (props) => {
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
 
   const { subscription } = props;
-  const iconBadge = subscription.new <= 99 ? subscription.new : "99+";
+  const hasUnread = subscription.new > 0;
+  const unreadCount = subscription.new <= 99 ? subscription.new : "99+";
   const displayName = topicDisplayName(subscription);
   const ariaLabel = subscription.state === ConnectionState.Connecting ? `${displayName} (${t("nav_button_connecting")})` : displayName;
-  const icon =
-    subscription.state === ConnectionState.Connecting ? (
-      <CircularProgress size="24px" />
-    ) : (
-      <Badge badgeContent={iconBadge} invisible={subscription.new === 0} color="primary">
-        <ChatBubbleOutlineIcon />
-      </Badge>
-    );
 
   // Letzte Nachricht fuer Vorschau laden
   const lastNotification = useLiveQuery(
@@ -417,6 +531,13 @@ const SubscriptionItem = (props) => {
     [subscription.id]
   );
 
+  const lastSender = lastNotification?.sender;
+  const sidebarAvatar = subscription.state === ConnectionState.Connecting ? (
+    <CircularProgress size="24px" />
+  ) : (
+    <UserAvatar username={lastSender || displayName} size="sm" />
+  );
+
   const previewText = lastNotification
     ? `${lastNotification.sender ? lastNotification.sender + ": " : ""}${(lastNotification.message || "").substring(0, 40)}`
     : null;
@@ -425,19 +546,23 @@ const SubscriptionItem = (props) => {
   const handleClick = async () => {
     navigate(routes.forSubscription(subscription));
     await subscriptionManager.markNotificationsRead(subscription.id);
+    // Auto-close mobile drawer on chat selection
+    if (window.innerWidth < 600 && props.onMobileDrawerToggle) {
+      props.onMobileDrawerToggle();
+    }
   };
 
   return (
     <>
       <ListItemButton onClick={handleClick} selected={props.selected} aria-label={ariaLabel} aria-live="polite" sx={{ alignItems: "flex-start", py: 1 }}>
-        <ListItemIcon sx={{ mt: 1 }}>{icon}</ListItemIcon>
+        <ListItemIcon sx={{ mt: 1, minWidth: 40 }}>{sidebarAvatar}</ListItemIcon>
         <ListItemText
           primary={
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Typography
                 variant="body1"
                 sx={{
-                  fontWeight: subscription.new > 0 ? 700 : 400,
+                  fontWeight: hasUnread ? 700 : 400,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
@@ -446,11 +571,31 @@ const SubscriptionItem = (props) => {
               >
                 {displayName}
               </Typography>
-              {timeText && (
-                <Typography variant="caption" sx={{ ml: 1, flexShrink: 0, color: "text.secondary", fontFamily: "monospace", fontSize: "0.7rem" }}>
-                  {timeText}
-                </Typography>
-              )}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0, ml: 1 }}>
+                {timeText && (
+                  <Typography variant="caption" sx={{ color: hasUnread ? "var(--coop-black)" : "text.secondary", fontFamily: "monospace", fontSize: "0.7rem", fontWeight: hasUnread ? 700 : 400 }}>
+                    {timeText}
+                  </Typography>
+                )}
+                {hasUnread && (
+                  <Box sx={{
+                    backgroundColor: "var(--coop-pink)",
+                    color: "#fff",
+                    border: "2px solid var(--coop-black)",
+                    fontFamily: "var(--coop-font-display)",
+                    fontWeight: 700,
+                    fontSize: "0.65rem",
+                    minWidth: 20,
+                    height: 20,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    px: 0.5,
+                  }}>
+                    {unreadCount}
+                  </Box>
+                )}
+              </Box>
             </Box>
           }
           secondary={previewText}
@@ -460,7 +605,8 @@ const SubscriptionItem = (props) => {
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
               fontSize: "0.8rem",
-              color: "text.secondary",
+              color: hasUnread ? "var(--coop-black)" : "text.secondary",
+              fontWeight: hasUnread ? 600 : 400,
             },
           }}
         />

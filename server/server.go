@@ -62,6 +62,7 @@ type Server struct {
 	stripe            stripeAPI                           // Stripe API, can be replaced with a mock
 	priceCache        *util.LookupCache[map[string]int64] // Stripe price ID -> price as cents (USD implied!)
 	metricsHandler    http.Handler                        // Handles /metrics if enable-metrics set, and listen-metrics-http not set
+	socialRateLimiter *socialRateLimiter                  // Rate limiter for typing/nudge events
 	closeChan         chan bool
 	mu                sync.RWMutex
 }
@@ -242,8 +243,9 @@ func New(conf *Config) (*Server, error) {
 		userManager:     userManager,
 		messages:        messages,
 		messagesHistory: []int64{messages},
-		visitors:        make(map[string]*visitor),
-		stripe:          stripe,
+		visitors:          make(map[string]*visitor),
+		stripe:            stripe,
+		socialRateLimiter: newSocialRateLimiter(),
 	}
 	s.priceCache = util.NewLookupCache(s.fetchStripePrices, conf.StripePriceCacheDuration)
 	return s, nil
@@ -378,6 +380,9 @@ func (s *Server) Stop() {
 	if s.smtpServer != nil {
 		s.smtpServer.Close()
 	}
+	if s.socialRateLimiter != nil {
+		s.socialRateLimiter.Stop()
+	}
 	s.closeDatabases()
 	close(s.closeChan)
 }
@@ -398,6 +403,10 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.handleError(w, r, v, err)
 		return
+	}
+	// Coop: Track last-seen for authenticated users (batched writes)
+	if u := v.User(); u != nil && s.userManager != nil {
+		s.userManager.EnqueueLastSeen(u.ID)
 	}
 	ev := logvr(v, r)
 	if ev.IsTrace() {
@@ -567,6 +576,63 @@ func (s *Server) handleInternal(w http.ResponseWriter, r *http.Request, v *visit
 		return s.limitRequests(s.handleInviteInfo)(w, r, v)
 	} else if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/v1/invite/") && strings.HasSuffix(r.URL.Path, "/redeem") {
 		return s.limitRequests(s.handleInviteRedeem)(w, r, v)
+	} else if r.Method == http.MethodPut && r.URL.Path == "/v1/coop/profile/avatar" {
+		return s.ensureUser(s.handleAvatarUpload)(w, r, v)
+	} else if r.Method == http.MethodDelete && r.URL.Path == "/v1/coop/profile/avatar" {
+		return s.ensureUser(s.handleAvatarDelete)(w, r, v)
+	} else if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/v1/coop/profile/avatar/") {
+		return s.limitRequests(s.handleAvatarGet)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/coop/profile" {
+		return s.ensureUser(s.handleProfileGet)(w, r, v)
+	} else if r.Method == http.MethodPatch && r.URL.Path == "/v1/coop/profile" {
+		return s.ensureUser(s.handleProfileUpdate)(w, r, v)
+	} else if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/v1/coop/profile/") {
+		return s.ensureUser(s.handleProfileGetByUsername)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/coop/profiles" {
+		return s.ensureUser(s.handleProfilesByTopic)(w, r, v)
+	} else if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/v1/coop/messages/") && strings.HasSuffix(r.URL.Path, "/reactions") {
+		return s.ensureUser(s.handleReactionAdd)(w, r, v)
+	} else if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/v1/coop/messages/") && strings.HasSuffix(r.URL.Path, "/reactions") {
+		return s.ensureUser(s.handleReactionList)(w, r, v)
+	} else if r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, "/v1/coop/messages/") && strings.Contains(r.URL.Path, "/reactions/") {
+		return s.ensureUser(s.handleReactionDelete)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/coop/reactions" {
+		return s.ensureUser(s.handleReactionsByTopic)(w, r, v)
+	// Coop: Contacts
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/coop/contacts" {
+		return s.ensureUser(s.handleContactList)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/coop/contacts/requests" {
+		return s.ensureUser(s.handleContactRequests)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/coop/contacts" {
+		return s.ensureUser(s.handleContactAdd)(w, r, v)
+	} else if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/v1/coop/contacts/") && strings.HasSuffix(r.URL.Path, "/block") {
+		return s.ensureUser(s.handleContactBlock)(w, r, v)
+	} else if r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, "/v1/coop/contacts/") {
+		return s.ensureUser(s.handleContactUpdate)(w, r, v)
+	} else if r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, "/v1/coop/contacts/") {
+		return s.ensureUser(s.handleContactDelete)(w, r, v)
+	// Coop: User Search
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/coop/users/search" {
+		return s.ensureUser(s.handleUserSearch)(w, r, v)
+	// Coop: DMs
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/coop/dm" {
+		return s.ensureUser(s.handleDMCreate)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/coop/dm" {
+		return s.ensureUser(s.handleDMList)(w, r, v)
+	// Coop: Groups / Topic Meta
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/coop/groups" {
+		return s.ensureUser(s.handleGroupCreate)(w, r, v)
+	} else if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/v1/coop/topics/") && strings.HasSuffix(r.URL.Path, "/meta") {
+		return s.ensureUser(s.handleTopicMetaGet)(w, r, v)
+	} else if r.Method == http.MethodPatch && strings.HasPrefix(r.URL.Path, "/v1/coop/topics/") && strings.HasSuffix(r.URL.Path, "/meta") {
+		return s.ensureUser(s.handleTopicMetaUpdate)(w, r, v)
+	// Coop: Social (Typing, Nudge, Commands)
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/coop/typing" {
+		return s.ensureUser(s.handleTypingEvent)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/coop/nudge" {
+		return s.ensureUser(s.handleNudge)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/coop/commands" {
+		return s.ensureUser(s.handleSlashCommand)(w, r, v)
 	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/join-requests" {
 		return s.ensureUser(s.limitRequests(s.handleJoinRequestCreate))(w, r, v)
 	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/join-requests" {
@@ -865,6 +931,16 @@ func (s *Server) handlePublishInternal(r *http.Request, v *visitor) (*message, e
 	m.User = v.MaybeUserID()
 	if u := v.User(); u != nil {
 		m.SenderName = u.Name
+	}
+	// Coop: Resolve reply_to text preview
+	if m.ReplyTo != "" {
+		if origMsg, err := s.messageCache.Message(m.ReplyTo); err == nil && origMsg != nil {
+			preview := origMsg.Message
+			if len(preview) > 100 {
+				preview = preview[:100]
+			}
+			m.ReplyToText = preview
+		}
 	}
 	if cache {
 		m.Expires = time.Unix(m.Time, 0).Add(v.Limits().MessageExpiryDuration).Unix()
@@ -1185,6 +1261,7 @@ func (s *Server) parsePublishParams(r *http.Request, m *message) (cache bool, fi
 		priorityStr = "" // Clear since it's already parsed
 	}
 	m.Tags = readCommaSeparatedParam(r, "x-tags", "tags", "tag", "ta")
+	m.ReplyTo = readParam(r, "x-reply-to", "reply-to")
 	delayStr := readParam(r, "x-delay", "delay", "x-at", "at", "x-in", "in")
 	if delayStr != "" {
 		if !cache {
@@ -2154,6 +2231,9 @@ func (s *Server) transformBodyJSON(next handleFunc) handleFunc {
 		}
 		if m.SequenceID != "" {
 			r.Header.Set("X-Sequence-ID", m.SequenceID)
+		}
+		if m.ReplyTo != "" {
+			r.Header.Set("X-Reply-To", m.ReplyTo)
 		}
 		return next(w, r, v)
 	}

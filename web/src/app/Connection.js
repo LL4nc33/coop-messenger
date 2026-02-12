@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 import { basicAuth, bearerAuth, encodeBase64Url, topicShortUrl, topicUrlWs } from "./utils";
-import { EVENT_OPEN, isNotificationEvent } from "./events";
+import { EVENT_OPEN, isNotificationEvent, isCoopSocialEvent } from "./events";
 
 const retryBackoffSeconds = [5, 10, 20, 30, 60, 120];
 
@@ -17,7 +17,7 @@ export class ConnectionState {
  * Incoming messages and state changes are forwarded via listeners.
  */
 class Connection {
-  constructor(connectionId, subscriptionId, baseUrl, topic, user, since, onNotification, onStateChanged) {
+  constructor(connectionId, subscriptionId, baseUrl, topic, user, since, onNotification, onStateChanged, onSocialEvent) {
     this.connectionId = connectionId;
     this.subscriptionId = subscriptionId;
     this.baseUrl = baseUrl;
@@ -27,6 +27,7 @@ class Connection {
     this.shortUrl = topicShortUrl(baseUrl, topic);
     this.onNotification = onNotification;
     this.onStateChanged = onStateChanged;
+    this.onSocialEvent = onSocialEvent || (() => {});
     this.ws = null;
     this.retryCount = 0;
     this.retryTimeout = null;
@@ -52,7 +53,12 @@ class Connection {
         if (data.event === EVENT_OPEN) {
           return;
         }
-        // Accept message, message_delete, and message_clear events
+        // Coop social events (typing) - forward without storing
+        if (isCoopSocialEvent(data.event)) {
+          this.onSocialEvent(this.subscriptionId, data);
+          return;
+        }
+        // Accept message, message_delete, message_clear, and coop_nudge events
         const relevantAndValid = isNotificationEvent(data.event) && "id" in data && "time" in data;
         if (!relevantAndValid) {
           console.log(`[Connection, ${this.shortUrl}, ${this.connectionId}] Unexpected message. Ignoring.`);

@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"heckel.io/ntfy/v2/log"
 	"heckel.io/ntfy/v2/user"
 	"net/http"
 	"strings"
@@ -297,6 +298,11 @@ func (s *Server) handleAdminTopicAccessGrant(w http.ResponseWriter, r *http.Requ
 		return errHTTPInternalError
 	}
 
+	// Add subscription so the topic appears in the user's sidebar
+	if err := s.addSubscriptionsForUser(req.Username, []string{req.TopicPattern}); err != nil {
+		logvr(v, r).Tag(tagAdmin).Warn("admin: failed to add subscription for user %s: %v", req.Username, err)
+	}
+
 	w.WriteHeader(http.StatusCreated)
 	return nil
 }
@@ -545,6 +551,10 @@ func (s *Server) handleAccessAllow(w http.ResponseWriter, r *http.Request, v *vi
 	}
 	if err := s.userManager.AllowAccess(req.Username, req.Topic, permission); err != nil {
 		return err
+	}
+	// Add subscription so the topic appears in the user's sidebar
+	if err := s.addSubscriptionsForUser(req.Username, []string{req.Topic}); err != nil {
+		log.Tag(tagAdmin).Warn("Failed to add subscription for user %s: %v", req.Username, err)
 	}
 	return s.writeJSON(w, newSuccessResponse())
 }

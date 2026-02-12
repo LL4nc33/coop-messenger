@@ -339,6 +339,125 @@ class AccountApi {
     });
   }
 
+  // === Coop: Contacts API ===
+
+  async getContacts() {
+    const url = `${config.base_url}/v1/coop/contacts`;
+    const response = await fetchOrThrow(url, {
+      headers: withBearerAuth({}, session.token()),
+    });
+    return response.json();
+  }
+
+  async getContactRequests() {
+    const url = `${config.base_url}/v1/coop/contacts/requests`;
+    const response = await fetchOrThrow(url, {
+      headers: withBearerAuth({}, session.token()),
+    });
+    return response.json();
+  }
+
+  async addContact(username) {
+    const url = `${config.base_url}/v1/coop/contacts`;
+    await fetchOrThrow(url, {
+      method: "POST",
+      headers: withBearerAuth({}, session.token()),
+      body: JSON.stringify({ username }),
+    });
+  }
+
+  async acceptContact(username) {
+    const url = `${config.base_url}/v1/coop/contacts/${encodeURIComponent(username)}`;
+    await fetchOrThrow(url, {
+      method: "PUT",
+      headers: withBearerAuth({}, session.token()),
+      body: JSON.stringify({ status: "accepted" }),
+    });
+  }
+
+  async rejectContact(username) {
+    const url = `${config.base_url}/v1/coop/contacts/${encodeURIComponent(username)}`;
+    await fetchOrThrow(url, {
+      method: "PUT",
+      headers: withBearerAuth({}, session.token()),
+      body: JSON.stringify({ status: "rejected" }),
+    });
+  }
+
+  async removeContact(username) {
+    const url = `${config.base_url}/v1/coop/contacts/${encodeURIComponent(username)}`;
+    await fetchOrThrow(url, {
+      method: "DELETE",
+      headers: withBearerAuth({}, session.token()),
+    });
+  }
+
+  async blockContact(username) {
+    const url = `${config.base_url}/v1/coop/contacts/${encodeURIComponent(username)}/block`;
+    await fetchOrThrow(url, {
+      method: "POST",
+      headers: withBearerAuth({}, session.token()),
+    });
+  }
+
+  async searchUsers(query) {
+    const url = `${config.base_url}/v1/coop/users/search?q=${encodeURIComponent(query)}`;
+    const response = await fetchOrThrow(url, {
+      headers: withBearerAuth({}, session.token()),
+    });
+    return response.json();
+  }
+
+  // === Coop: DM API ===
+
+  async startDM(username) {
+    const url = `${config.base_url}/v1/coop/dm`;
+    const response = await fetchOrThrow(url, {
+      method: "POST",
+      headers: withBearerAuth({}, session.token()),
+      body: JSON.stringify({ username }),
+    });
+    return response.json();
+  }
+
+  async getDMs() {
+    const url = `${config.base_url}/v1/coop/dm`;
+    const response = await fetchOrThrow(url, {
+      headers: withBearerAuth({}, session.token()),
+    });
+    return response.json();
+  }
+
+  // === Coop: Groups API ===
+
+  async createGroup(name, members) {
+    const url = `${config.base_url}/v1/coop/groups`;
+    const response = await fetchOrThrow(url, {
+      method: "POST",
+      headers: withBearerAuth({}, session.token()),
+      body: JSON.stringify({ name, members }),
+    });
+    return response.json();
+  }
+
+  async getTopicMeta(topic) {
+    const url = `${config.base_url}/v1/coop/topics/${encodeURIComponent(topic)}/meta`;
+    const response = await fetchOrThrow(url, {
+      headers: withBearerAuth({}, session.token()),
+    });
+    return response.json();
+  }
+
+  async updateTopicMeta(topic, displayName, description) {
+    const url = `${config.base_url}/v1/coop/topics/${encodeURIComponent(topic)}/meta`;
+    const response = await fetchOrThrow(url, {
+      method: "PATCH",
+      headers: withBearerAuth({}, session.token()),
+      body: JSON.stringify({ display_name: displayName, description }),
+    });
+    return response.json();
+  }
+
   async sync() {
     try {
       if (!session.token()) {

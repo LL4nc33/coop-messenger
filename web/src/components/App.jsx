@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createContext, Suspense, useContext, useEffect, useState, useMemo } from "react";
+import { createContext, Suspense, lazy, useContext, useEffect, useState, useMemo } from "react";
 import { Box, Toolbar, CssBaseline, Backdrop, CircularProgress, useMediaQuery, ThemeProvider, createTheme } from "@mui/material";
 import { useLiveQuery } from "dexie-react-hooks";
 import { BrowserRouter, Outlet, Route, Routes, useParams } from "react-router-dom";
@@ -22,6 +22,7 @@ import Account from "./Account";
 import AdminPanel from "./AdminPanel";
 import InvitePage from "./InvitePage";
 import DocsPage from "./DocsPage";
+const MemberList = lazy(() => import("./MemberList"));
 import "../css/coop.css"; // Coop Neobrutalism Design System
 import initI18n from "../app/i18n"; // Translations!
 import prefs from "../app/Prefs";
@@ -31,6 +32,7 @@ import session from "../app/Session";
 initI18n();
 
 export const AccountContext = createContext(null);
+export const ReplyContext = createContext({ replyTo: null, setReplyTo: () => {} });
 
 const App = () => {
   const { i18n } = useTranslation();
@@ -141,6 +143,8 @@ const Layout = () => {
   const params = useParams();
   const { account, setAccount } = useContext(AccountContext);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [replyTo, setReplyTo] = useState(null);
+  const [memberListOpen, setMemberListOpen] = useState(false);
   const users = useLiveQuery(() => userManager.all());
   const subscriptions = useLiveQuery(() => subscriptionManager.all());
   const webPushTopics = useWebPushTopics();
@@ -157,26 +161,35 @@ const Layout = () => {
   useBackgroundProcesses();
   useEffect(() => updateTitle(newNotificationsCount), [newNotificationsCount]);
 
+  const replyContextValue = useMemo(() => ({ replyTo, setReplyTo }), [replyTo]);
+
   return (
-    <Box sx={{ display: "flex" }}>
-      <ActionBar selected={selected} onMobileDrawerToggle={() => setMobileDrawerOpen(!mobileDrawerOpen)} />
-      <Navigation
-        subscriptions={subscriptionsWithoutInternal}
-        selectedSubscription={selected}
-        mobileDrawerOpen={mobileDrawerOpen}
-        onMobileDrawerToggle={() => setMobileDrawerOpen(!mobileDrawerOpen)}
-      />
-      <Main>
-        <Toolbar />
-        <Outlet
-          context={{
-            subscriptions: subscriptionsWithoutInternal,
-            selected,
-          }}
+    <ReplyContext.Provider value={replyContextValue}>
+      <Box sx={{ display: "flex" }}>
+        <ActionBar selected={selected} onMobileDrawerToggle={() => setMobileDrawerOpen(!mobileDrawerOpen)} />
+        <Navigation
+          subscriptions={subscriptionsWithoutInternal}
+          selectedSubscription={selected}
+          mobileDrawerOpen={mobileDrawerOpen}
+          onMobileDrawerToggle={() => setMobileDrawerOpen(!mobileDrawerOpen)}
         />
-      </Main>
-      <Messaging selected={selected} />
-    </Box>
+        <Main>
+          <Toolbar />
+          <Outlet
+            context={{
+              subscriptions: subscriptionsWithoutInternal,
+              selected,
+            }}
+          />
+        </Main>
+        <Messaging selected={selected} onLocalCommand={(cmd) => { if (cmd === "mitglieder") setMemberListOpen(true); }} />
+        {memberListOpen && selected && (
+          <Suspense fallback={null}>
+            <MemberList open={memberListOpen} onClose={() => setMemberListOpen(false)} topic={selected.topic} />
+          </Suspense>
+        )}
+      </Box>
+    </ReplyContext.Provider>
   );
 };
 
