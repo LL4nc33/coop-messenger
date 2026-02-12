@@ -23,13 +23,15 @@ const (
 
 // socialRateLimiter tracks per-user-per-topic rate limits for typing and nudge events
 type socialRateLimiter struct {
-	mu    sync.Mutex
-	items map[string]int64 // key: "event:username:topic" -> unix timestamp
+	mu     sync.Mutex
+	items  map[string]int64 // key: "event:username:topic" -> unix timestamp
+	stopCh chan struct{}
 }
 
 func newSocialRateLimiter() *socialRateLimiter {
 	rl := &socialRateLimiter{
-		items: make(map[string]int64),
+		items:  make(map[string]int64),
+		stopCh: make(chan struct{}),
 	}
 	go rl.cleanupLoop()
 	return rl
@@ -48,17 +50,27 @@ func (rl *socialRateLimiter) Allow(event, username, topic string, interval time.
 }
 
 func (rl *socialRateLimiter) cleanupLoop() {
+	ticker := time.NewTicker(rateLimitCleanup)
+	defer ticker.Stop()
 	for {
-		time.Sleep(rateLimitCleanup)
-		rl.mu.Lock()
-		now := time.Now().Unix()
-		for k, v := range rl.items {
-			if now-v > 300 { // 5 minutes
-				delete(rl.items, k)
+		select {
+		case <-ticker.C:
+			rl.mu.Lock()
+			now := time.Now().Unix()
+			for k, v := range rl.items {
+				if now-v > 300 { // 5 minutes
+					delete(rl.items, k)
+				}
 			}
+			rl.mu.Unlock()
+		case <-rl.stopCh:
+			return
 		}
-		rl.mu.Unlock()
 	}
+}
+
+func (rl *socialRateLimiter) Stop() {
+	close(rl.stopCh)
 }
 
 type apiTypingRequest struct {

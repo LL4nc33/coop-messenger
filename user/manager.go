@@ -644,7 +644,7 @@ const (
 		FROM user u
 		LEFT JOIN user_profile p ON p.user_id = u.id
 		WHERE u.role != 'anonymous' AND u.deleted IS NULL
-		AND (u.user LIKE ? OR p.display_name LIKE ?)
+		AND (u.user LIKE ? ESCAPE '\' OR p.display_name LIKE ? ESCAPE '\')
 		AND u.user != ?
 		ORDER BY u.user
 		LIMIT 20
@@ -2576,9 +2576,16 @@ func (a *Manager) IsBlocked(userA, userB string) (bool, error) {
 	return count > 0, nil
 }
 
+func escapeLike(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, "%", `\%`)
+	s = strings.ReplaceAll(s, "_", `\_`)
+	return s
+}
+
 // SearchUsers searches for users by username or display name
 func (a *Manager) SearchUsers(query, excludeUser string) ([]*UserSearchResult, error) {
-	likeQuery := "%" + query + "%"
+	likeQuery := "%" + escapeLike(query) + "%"
 	rows, err := a.db.Query(searchUsersQuery, likeQuery, likeQuery, excludeUser)
 	if err != nil {
 		return nil, err

@@ -380,6 +380,9 @@ func (s *Server) Stop() {
 	if s.smtpServer != nil {
 		s.smtpServer.Close()
 	}
+	if s.socialRateLimiter != nil {
+		s.socialRateLimiter.Stop()
+	}
 	s.closeDatabases()
 	close(s.closeChan)
 }

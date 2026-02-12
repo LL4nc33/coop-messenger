@@ -191,7 +191,7 @@ const ChatAttachment = ({ attachment }) => {
   );
 };
 
-const URL_REGEX = /\bhttps?:\/\/[^\s]+/gi;
+const URL_REGEX = /\bhttps?:\/\/[^\s]{1,500}/gi;
 
 const extractUrls = (text) => {
   if (!text) return [];

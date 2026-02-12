@@ -58,6 +58,11 @@ func (s *Server) handleTopicMetaUpdate(w http.ResponseWriter, r *http.Request, v
 		return errHTTPBadRequest.Wrap("missing topic")
 	}
 
+	// Check write access to topic
+	if err := s.userManager.Authorize(u, topic, user.PermissionWrite); err != nil {
+		return errHTTPForbidden
+	}
+
 	body, err := io.ReadAll(io.LimitReader(r.Body, 4096))
 	if err != nil {
 		return err
@@ -120,6 +125,15 @@ func (s *Server) handleGroupCreate(w http.ResponseWriter, r *http.Request, v *vi
 	topic := "grp_" + topicSlug(req.Name)
 	if topic == "grp_" {
 		return errHTTPBadRequest.Wrap("invalid group name")
+	}
+
+	// Check if topic already exists
+	existingMeta, err := s.userManager.TopicMeta(topic)
+	if err != nil {
+		return err
+	}
+	if existingMeta != nil {
+		return errHTTPConflict.Wrap("group name conflicts with existing topic")
 	}
 
 	// Grant access to creator
