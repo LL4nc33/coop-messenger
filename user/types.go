@@ -86,6 +86,8 @@ type TopicMeta struct {
 	AvatarID    string `json:"avatar_id,omitempty"`
 	CreatedBy   string `json:"created_by,omitempty"`
 	CreatedAt   int64  `json:"created_at,omitempty"`
+	DMUserA     string `json:"dm_user_a,omitempty"`
+	DMUserB     string `json:"dm_user_b,omitempty"`
 }
 
 // UserSearchResult represents a user search result (Coop)

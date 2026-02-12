@@ -1,8 +1,9 @@
 package server
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"heckel.io/ntfy/v2/log"
 	"heckel.io/ntfy/v2/user"
 	"io"
@@ -12,32 +13,18 @@ import (
 
 const tagDM = "dm"
 
-// dmTopicName generates a deterministic DM topic name for two users (alphabetically sorted)
-func dmTopicName(userA, userB string) string {
-	if userA < userB {
-		return fmt.Sprintf("dm_%s_%s", userA, userB)
+// generateDMTopicID creates a random DM topic ID like "dm_a3f7b2c4e1d9f6a8"
+func generateDMTopicID() (string, error) {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
 	}
-	return fmt.Sprintf("dm_%s_%s", userB, userA)
+	return "dm_" + hex.EncodeToString(b), nil
 }
 
 // isDMTopic checks if a topic name is a DM topic
 func isDMTopic(topic string) bool {
 	return strings.HasPrefix(topic, "dm_")
-}
-
-// dmPartner extracts the other user's name from a DM topic name
-func dmPartner(topic, username string) string {
-	if !isDMTopic(topic) {
-		return ""
-	}
-	parts := strings.SplitN(strings.TrimPrefix(topic, "dm_"), "_", 2)
-	if len(parts) != 2 {
-		return ""
-	}
-	if parts[0] == username {
-		return parts[1]
-	}
-	return parts[0]
 }
 
 type apiDMCreateRequest struct {
@@ -102,41 +89,54 @@ func (s *Server) handleDMCreate(w http.ResponseWriter, r *http.Request, v *visit
 		}
 	}
 
-	// Generate DM topic name
-	topic := dmTopicName(u.Name, req.Username)
-
-	// Grant access to both users (idempotent via upsert in AllowAccess)
-	if err := s.userManager.AllowAccess(u.Name, topic, user.PermissionReadWrite); err != nil {
-		return err
-	}
-	if err := s.userManager.AllowAccess(req.Username, topic, user.PermissionReadWrite); err != nil {
+	// Check if DM topic already exists between these users
+	topic, err := s.userManager.FindDMTopic(u.Name, req.Username)
+	if err != nil {
 		return err
 	}
 
-	log.Tag(tagDM).Info("DM created/opened: %s <-> %s (topic=%s)", u.Name, req.Username, topic)
+	if topic == "" {
+		// Generate new random DM topic ID
+		topic, err = generateDMTopicID()
+		if err != nil {
+			return err
+		}
+
+		// Store DM user mapping in topic_meta
+		if err := s.userManager.SetDMTopicMeta(topic, u.Name, req.Username); err != nil {
+			return err
+		}
+
+		// Grant access to both users
+		if err := s.userManager.AllowAccess(u.Name, topic, user.PermissionReadWrite); err != nil {
+			return err
+		}
+		if err := s.userManager.AllowAccess(req.Username, topic, user.PermissionReadWrite); err != nil {
+			return err
+		}
+
+		log.Tag(tagDM).Info("DM created: %s <-> %s (topic=%s)", u.Name, req.Username, topic)
+	}
+
 	return s.writeJSON(w, &apiDMCreateResponse{Topic: topic})
 }
 
 // handleDMList handles GET /v1/coop/dm - list all DMs for the current user
 func (s *Server) handleDMList(w http.ResponseWriter, r *http.Request, v *visitor) error {
 	u := v.User()
-	topics, err := s.userManager.DMTopics(u.Name)
+	dmEntries, err := s.userManager.DMTopics(u.Name)
 	if err != nil {
 		return err
 	}
 
-	entries := make([]*apiDMListEntry, 0, len(topics))
-	for _, topic := range topics {
-		partner := dmPartner(topic, u.Name)
-		if partner == "" {
-			continue
-		}
+	entries := make([]*apiDMListEntry, 0, len(dmEntries))
+	for _, dm := range dmEntries {
 		entry := &apiDMListEntry{
-			Topic:   topic,
-			Partner: partner,
+			Topic:   dm.Topic,
+			Partner: dm.Partner,
 		}
 		// Load partner profile
-		profile, err := s.userManager.Profile(partner)
+		profile, err := s.userManager.Profile(dm.Partner)
 		if err == nil && profile != nil {
 			entry.DisplayName = profile.DisplayName
 			entry.AvatarURL = profile.AvatarURL

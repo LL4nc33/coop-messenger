@@ -336,7 +336,7 @@ const (
 
 // Schema management queries
 const (
-	currentSchemaVersion     = 8
+	currentSchemaVersion     = 9
 	insertSchemaVersion      = `INSERT INTO schemaVersion VALUES (1, ?)`
 	updateSchemaVersion      = `UPDATE schemaVersion SET version = ? WHERE id = 1`
 	selectSchemaVersionQuery = `SELECT version FROM schemaVersion WHERE id = 1`
@@ -586,6 +586,13 @@ const (
 		ALTER TABLE user_profile ADD COLUMN privacy TEXT NOT NULL DEFAULT 'request';
 	`
 
+	// 8 -> 9: DM user columns in topic_meta for random DM topic IDs
+	migrate8To9UpdateQueries = `
+		ALTER TABLE topic_meta ADD COLUMN dm_user_a TEXT NOT NULL DEFAULT '';
+		ALTER TABLE topic_meta ADD COLUMN dm_user_b TEXT NOT NULL DEFAULT '';
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_topic_meta_dm ON topic_meta(dm_user_a, dm_user_b) WHERE dm_user_a != '';
+	`
+
 	// Contact CRUD queries
 	insertContactQuery = `
 		INSERT INTO user_contact (user_id, contact_user_id, status, created_at, updated_at)
@@ -663,7 +670,7 @@ const (
 
 	// Topic meta queries
 	selectTopicMetaQuery = `
-		SELECT topic, display_name, description, avatar_id, created_by, created_at
+		SELECT topic, display_name, description, avatar_id, created_by, created_at, dm_user_a, dm_user_b
 		FROM topic_meta WHERE topic = ?
 	`
 	upsertTopicMetaQuery = `
@@ -674,13 +681,24 @@ const (
 			description = excluded.description,
 			avatar_id = excluded.avatar_id
 	`
+	upsertDMTopicMetaQuery = `
+		INSERT INTO topic_meta (topic, display_name, description, avatar_id, created_by, created_at, dm_user_a, dm_user_b)
+		VALUES (?, '', '', '', '', strftime('%s','now'), ?, ?)
+		ON CONFLICT (topic) DO UPDATE SET
+			dm_user_a = excluded.dm_user_a,
+			dm_user_b = excluded.dm_user_b
+	`
+	findDMTopicQuery = `
+		SELECT topic FROM topic_meta
+		WHERE (dm_user_a = ? AND dm_user_b = ?) OR (dm_user_a = ? AND dm_user_b = ?)
+		LIMIT 1
+	`
 
-	// DM-related: list topics with dm_ prefix for a user
+	// DM-related: list DM topics for a user via topic_meta
 	selectDMTopicsQuery = `
-		SELECT a.topic
-		FROM user_access a
-		JOIN user u ON u.id = a.user_id
-		WHERE u.user = ? AND a.topic LIKE 'dm%'
+		SELECT topic, dm_user_a, dm_user_b
+		FROM topic_meta
+		WHERE dm_user_a = ? OR dm_user_b = ?
 	`
 
 	// Profile CRUD queries
@@ -734,6 +752,7 @@ var (
 		5: migrateFrom5,
 		6: migrateFrom6,
 		7: migrateFrom7,
+		8: migrateFrom8,
 	}
 )
 
@@ -2356,6 +2375,22 @@ func migrateFrom7(db *sql.DB) error {
 	return tx.Commit()
 }
 
+func migrateFrom8(db *sql.DB) error {
+	log.Tag(tag).Info("Migrating user database schema: from 8 to 9")
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(migrate8To9UpdateQueries); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(updateSchemaVersion, 9); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 // Profile returns the profile for a given username
 func (a *Manager) Profile(username string) (*Profile, error) {
 	row := a.db.QueryRow(selectProfileByUsernameQuery, username)
@@ -2610,7 +2645,7 @@ func (a *Manager) SearchUsers(query, excludeUser string) ([]*UserSearchResult, e
 func (a *Manager) TopicMeta(topic string) (*TopicMeta, error) {
 	row := a.db.QueryRow(selectTopicMetaQuery, topic)
 	meta := &TopicMeta{}
-	if err := row.Scan(&meta.Topic, &meta.DisplayName, &meta.Description, &meta.AvatarID, &meta.CreatedBy, &meta.CreatedAt); err != nil {
+	if err := row.Scan(&meta.Topic, &meta.DisplayName, &meta.Description, &meta.AvatarID, &meta.CreatedBy, &meta.CreatedAt, &meta.DMUserA, &meta.DMUserB); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
@@ -2625,26 +2660,51 @@ func (a *Manager) SetTopicMeta(topic, displayName, description, avatarID, create
 	return err
 }
 
-// DMTopics returns all DM topic names for a user
-func (a *Manager) DMTopics(username string) ([]string, error) {
-	rows, err := a.db.Query(selectDMTopicsQuery, username)
+// SetDMTopicMeta creates a DM topic metadata entry with the two user references
+func (a *Manager) SetDMTopicMeta(topic, userA, userB string) error {
+	_, err := a.db.Exec(upsertDMTopicMetaQuery, topic, userA, userB)
+	return err
+}
+
+// FindDMTopic finds an existing DM topic between two users, returns "" if none exists
+func (a *Manager) FindDMTopic(userA, userB string) (string, error) {
+	row := a.db.QueryRow(findDMTopicQuery, userA, userB, userB, userA)
+	var topic string
+	if err := row.Scan(&topic); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
+		return "", err
+	}
+	return topic, nil
+}
+
+// DMTopicEntry represents a DM topic with partner info
+type DMTopicEntry struct {
+	Topic   string
+	Partner string
+}
+
+// DMTopics returns all DM topics for a user with partner usernames
+func (a *Manager) DMTopics(username string) ([]*DMTopicEntry, error) {
+	rows, err := a.db.Query(selectDMTopicsQuery, username, username)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	topics := make([]string, 0)
+	entries := make([]*DMTopicEntry, 0)
 	for rows.Next() {
-		var topic string
-		if err := rows.Scan(&topic); err != nil {
+		var topic, dmUserA, dmUserB string
+		if err := rows.Scan(&topic, &dmUserA, &dmUserB); err != nil {
 			return nil, err
 		}
-		// Unescape underscores stored by AllowAccess (toSQLWildcard)
-		topic = strings.ReplaceAll(topic, "\\_", "_")
-		if strings.HasPrefix(topic, "dm_") {
-			topics = append(topics, topic)
+		partner := dmUserA
+		if dmUserA == username {
+			partner = dmUserB
 		}
+		entries = append(entries, &DMTopicEntry{Topic: topic, Partner: partner})
 	}
-	return topics, rows.Err()
+	return entries, rows.Err()
 }
 
 func nullString(s string) sql.NullString {
