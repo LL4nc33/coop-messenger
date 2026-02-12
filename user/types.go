@@ -63,7 +63,52 @@ type Profile struct {
 	Bio         string `json:"bio"`
 	AvatarURL   string `json:"avatar_url,omitempty"`
 	LastSeen    int64  `json:"last_seen"`
+	Privacy     string `json:"privacy,omitempty"`
 }
+
+// Contact represents a contact relationship between two users (Coop)
+type Contact struct {
+	Username    string `json:"username"`
+	DisplayName string `json:"display_name,omitempty"`
+	Bio         string `json:"bio,omitempty"`
+	AvatarURL   string `json:"avatar_url,omitempty"`
+	LastSeen    int64  `json:"last_seen,omitempty"`
+	Status      string `json:"status"`
+	Nickname    string `json:"nickname,omitempty"`
+	CreatedAt   int64  `json:"created_at,omitempty"`
+}
+
+// TopicMeta represents metadata for a topic/group (Coop)
+type TopicMeta struct {
+	Topic       string `json:"topic"`
+	DisplayName string `json:"display_name"`
+	Description string `json:"description,omitempty"`
+	AvatarID    string `json:"avatar_id,omitempty"`
+	CreatedBy   string `json:"created_by,omitempty"`
+	CreatedAt   int64  `json:"created_at,omitempty"`
+}
+
+// UserSearchResult represents a user search result (Coop)
+type UserSearchResult struct {
+	Username    string `json:"username"`
+	DisplayName string `json:"display_name,omitempty"`
+	Bio         string `json:"bio,omitempty"`
+	AvatarURL   string `json:"avatar_url,omitempty"`
+}
+
+// Contact status constants
+const (
+	ContactStatusPending  = "pending"
+	ContactStatusAccepted = "accepted"
+	ContactStatusBlocked  = "blocked"
+)
+
+// Privacy setting constants
+const (
+	PrivacyOpen       = "open"
+	PrivacyRequest    = "request"
+	PrivacyInviteOnly = "invite_only"
+)
 
 // Token represents a user token, including expiry date
 type Token struct {

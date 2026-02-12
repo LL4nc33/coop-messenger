@@ -336,7 +336,7 @@ const (
 
 // Schema management queries
 const (
-	currentSchemaVersion     = 7
+	currentSchemaVersion     = 8
 	insertSchemaVersion      = `INSERT INTO schemaVersion VALUES (1, ?)`
 	updateSchemaVersion      = `UPDATE schemaVersion SET version = ? WHERE id = 1`
 	selectSchemaVersionQuery = `SELECT version FROM schemaVersion WHERE id = 1`
@@ -560,14 +560,137 @@ const (
 			SELECT id FROM user WHERE role != 'anonymous';
 	`
 
+	// 7 -> 8: Coop contacts, topic metadata, privacy
+	migrate7To8UpdateQueries = `
+		CREATE TABLE IF NOT EXISTS user_contact (
+			user_id TEXT NOT NULL,
+			contact_user_id TEXT NOT NULL,
+			nickname TEXT NOT NULL DEFAULT '',
+			status TEXT NOT NULL DEFAULT 'pending',
+			created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+			updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+			PRIMARY KEY (user_id, contact_user_id),
+			FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE,
+			FOREIGN KEY (contact_user_id) REFERENCES user (id) ON DELETE CASCADE
+		);
+		CREATE INDEX IF NOT EXISTS idx_contact_user ON user_contact(user_id, status);
+		CREATE INDEX IF NOT EXISTS idx_contact_reverse ON user_contact(contact_user_id, status);
+		CREATE TABLE IF NOT EXISTS topic_meta (
+			topic TEXT PRIMARY KEY,
+			display_name TEXT NOT NULL DEFAULT '',
+			description TEXT NOT NULL DEFAULT '',
+			avatar_id TEXT NOT NULL DEFAULT '',
+			created_by TEXT NOT NULL DEFAULT '',
+			created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+		);
+		ALTER TABLE user_profile ADD COLUMN privacy TEXT NOT NULL DEFAULT 'request';
+	`
+
+	// Contact CRUD queries
+	insertContactQuery = `
+		INSERT INTO user_contact (user_id, contact_user_id, status, created_at, updated_at)
+		VALUES (
+			(SELECT id FROM user WHERE user = ?),
+			(SELECT id FROM user WHERE user = ?),
+			?, strftime('%s','now'), strftime('%s','now')
+		)
+	`
+	selectContactsQuery = `
+		SELECT u2.user, COALESCE(p.display_name, ''), COALESCE(p.bio, ''), COALESCE(p.avatar_id, ''), COALESCE(p.last_seen, 0), c.status, c.nickname, c.created_at
+		FROM user_contact c
+		JOIN user u1 ON u1.id = c.user_id
+		JOIN user u2 ON u2.id = c.contact_user_id
+		LEFT JOIN user_profile p ON p.user_id = c.contact_user_id
+		WHERE u1.user = ? AND c.status = ?
+		ORDER BY COALESCE(p.display_name, u2.user)
+	`
+	selectContactRequestsQuery = `
+		SELECT u1.user, COALESCE(p.display_name, ''), COALESCE(p.bio, ''), COALESCE(p.avatar_id, ''), COALESCE(p.last_seen, 0), c.status, c.nickname, c.created_at
+		FROM user_contact c
+		JOIN user u1 ON u1.id = c.user_id
+		JOIN user u2 ON u2.id = c.contact_user_id
+		LEFT JOIN user_profile p ON p.user_id = c.user_id
+		WHERE u2.user = ? AND c.status = 'pending'
+		ORDER BY c.created_at DESC
+	`
+	selectContactStatusQuery = `
+		SELECT c.status
+		FROM user_contact c
+		JOIN user u1 ON u1.id = c.user_id
+		JOIN user u2 ON u2.id = c.contact_user_id
+		WHERE u1.user = ? AND u2.user = ?
+	`
+	updateContactStatusQuery = `
+		UPDATE user_contact SET status = ?, updated_at = strftime('%s','now')
+		WHERE user_id = (SELECT id FROM user WHERE user = ?)
+		AND contact_user_id = (SELECT id FROM user WHERE user = ?)
+	`
+	deleteContactQuery = `
+		DELETE FROM user_contact
+		WHERE (user_id = (SELECT id FROM user WHERE user = ?) AND contact_user_id = (SELECT id FROM user WHERE user = ?))
+		   OR (user_id = (SELECT id FROM user WHERE user = ?) AND contact_user_id = (SELECT id FROM user WHERE user = ?))
+	`
+	selectIsBlockedQuery = `
+		SELECT COUNT(*) FROM user_contact c
+		JOIN user u1 ON u1.id = c.user_id
+		JOIN user u2 ON u2.id = c.contact_user_id
+		WHERE ((u1.user = ? AND u2.user = ?) OR (u1.user = ? AND u2.user = ?))
+		AND c.status = 'blocked'
+	`
+
+	// User search query
+	searchUsersQuery = `
+		SELECT u.user, COALESCE(p.display_name, ''), COALESCE(p.bio, ''), COALESCE(p.avatar_id, '')
+		FROM user u
+		LEFT JOIN user_profile p ON p.user_id = u.id
+		WHERE u.role != 'anonymous' AND u.deleted IS NULL
+		AND (u.user LIKE ? OR p.display_name LIKE ?)
+		AND u.user != ?
+		ORDER BY u.user
+		LIMIT 20
+	`
+
+	// Privacy query
+	selectProfilePrivacyQuery = `
+		SELECT COALESCE(p.privacy, 'request')
+		FROM user_profile p
+		JOIN user u ON u.id = p.user_id
+		WHERE u.user = ?
+	`
+	updateProfilePrivacyQuery = `
+		UPDATE user_profile SET privacy = ? WHERE user_id = (SELECT id FROM user WHERE user = ?)
+	`
+
+	// Topic meta queries
+	selectTopicMetaQuery = `
+		SELECT topic, display_name, description, avatar_id, created_by, created_at
+		FROM topic_meta WHERE topic = ?
+	`
+	upsertTopicMetaQuery = `
+		INSERT INTO topic_meta (topic, display_name, description, avatar_id, created_by, created_at)
+		VALUES (?, ?, ?, ?, ?, strftime('%s','now'))
+		ON CONFLICT (topic) DO UPDATE SET
+			display_name = excluded.display_name,
+			description = excluded.description,
+			avatar_id = excluded.avatar_id
+	`
+
+	// DM-related: list topics with dm_ prefix for a user
+	selectDMTopicsQuery = `
+		SELECT a.topic
+		FROM user_access a
+		JOIN user u ON u.id = a.user_id
+		WHERE u.user = ? AND a.topic LIKE 'dm%'
+	`
+
 	// Profile CRUD queries
 	selectProfileByUserIDQuery = `
-		SELECT p.display_name, p.bio, p.avatar_id, p.last_seen
+		SELECT p.display_name, p.bio, p.avatar_id, p.last_seen, p.privacy
 		FROM user_profile p
 		WHERE p.user_id = ?
 	`
 	selectProfileByUsernameQuery = `
-		SELECT u.user, p.display_name, p.bio, p.avatar_id, p.last_seen
+		SELECT u.user, p.display_name, p.bio, p.avatar_id, p.last_seen, p.privacy
 		FROM user_profile p
 		JOIN user u ON u.id = p.user_id
 		WHERE u.user = ?
@@ -610,6 +733,7 @@ var (
 		4: migrateFrom4,
 		5: migrateFrom5,
 		6: migrateFrom6,
+		7: migrateFrom7,
 	}
 )
 
@@ -2216,12 +2340,28 @@ func migrateFrom6(db *sql.DB) error {
 	return tx.Commit()
 }
 
+func migrateFrom7(db *sql.DB) error {
+	log.Tag(tag).Info("Migrating user database schema: from 7 to 8")
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(migrate7To8UpdateQueries); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(updateSchemaVersion, 8); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 // Profile returns the profile for a given username
 func (a *Manager) Profile(username string) (*Profile, error) {
 	row := a.db.QueryRow(selectProfileByUsernameQuery, username)
 	profile := &Profile{}
 	var avatarID string
-	if err := row.Scan(&profile.Username, &profile.DisplayName, &profile.Bio, &avatarID, &profile.LastSeen); err != nil {
+	if err := row.Scan(&profile.Username, &profile.DisplayName, &profile.Bio, &avatarID, &profile.LastSeen, &profile.Privacy); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
 		}
@@ -2238,7 +2378,7 @@ func (a *Manager) ProfileByUserID(userID string) (*Profile, error) {
 	row := a.db.QueryRow(selectProfileByUserIDQuery, userID)
 	profile := &Profile{}
 	var avatarID string
-	if err := row.Scan(&profile.DisplayName, &profile.Bio, &avatarID, &profile.LastSeen); err != nil {
+	if err := row.Scan(&profile.DisplayName, &profile.Bio, &avatarID, &profile.LastSeen, &profile.Privacy); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
 		}
@@ -2312,6 +2452,192 @@ func (a *Manager) ProfileAvatarID(userID string) (string, error) {
 func (a *Manager) UpdateProfileLastSeen(userID string, lastSeen int64) error {
 	_, err := a.db.Exec(updateProfileLastSeenQuery, lastSeen, userID)
 	return err
+}
+
+// UpdateProfilePrivacy updates the privacy setting for a user
+func (a *Manager) UpdateProfilePrivacy(username, privacy string) error {
+	if privacy != PrivacyOpen && privacy != PrivacyRequest && privacy != PrivacyInviteOnly {
+		return ErrInvalidArgument
+	}
+	_, err := a.db.Exec(updateProfilePrivacyQuery, privacy, username)
+	return err
+}
+
+// ProfilePrivacy returns the privacy setting for a user
+func (a *Manager) ProfilePrivacy(username string) (string, error) {
+	row := a.db.QueryRow(selectProfilePrivacyQuery, username)
+	var privacy string
+	if err := row.Scan(&privacy); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return PrivacyRequest, nil // default
+		}
+		return "", err
+	}
+	return privacy, nil
+}
+
+// AddContact creates a contact request from one user to another
+func (a *Manager) AddContact(fromUsername, toUsername, status string) error {
+	_, err := a.db.Exec(insertContactQuery, fromUsername, toUsername, status)
+	return err
+}
+
+// Contacts returns the contact list for a user with a given status
+func (a *Manager) Contacts(username, status string) ([]*Contact, error) {
+	rows, err := a.db.Query(selectContactsQuery, username, status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	contacts := make([]*Contact, 0)
+	for rows.Next() {
+		c := &Contact{}
+		var avatarID string
+		if err := rows.Scan(&c.Username, &c.DisplayName, &c.Bio, &avatarID, &c.LastSeen, &c.Status, &c.Nickname, &c.CreatedAt); err != nil {
+			return nil, err
+		}
+		if avatarID != "" {
+			c.AvatarURL = "/v1/coop/profile/avatar/" + avatarID
+		}
+		contacts = append(contacts, c)
+	}
+	return contacts, rows.Err()
+}
+
+// ContactRequests returns pending incoming contact requests for a user
+func (a *Manager) ContactRequests(username string) ([]*Contact, error) {
+	rows, err := a.db.Query(selectContactRequestsQuery, username)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	contacts := make([]*Contact, 0)
+	for rows.Next() {
+		c := &Contact{}
+		var avatarID string
+		if err := rows.Scan(&c.Username, &c.DisplayName, &c.Bio, &avatarID, &c.LastSeen, &c.Status, &c.Nickname, &c.CreatedAt); err != nil {
+			return nil, err
+		}
+		if avatarID != "" {
+			c.AvatarURL = "/v1/coop/profile/avatar/" + avatarID
+		}
+		contacts = append(contacts, c)
+	}
+	return contacts, rows.Err()
+}
+
+// ContactStatus returns the status between two users (from perspective of fromUser)
+func (a *Manager) ContactStatus(fromUsername, toUsername string) (string, error) {
+	row := a.db.QueryRow(selectContactStatusQuery, fromUsername, toUsername)
+	var status string
+	if err := row.Scan(&status); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil // no relationship
+		}
+		return "", err
+	}
+	return status, nil
+}
+
+// UpdateContactStatus updates the status of a contact relationship
+func (a *Manager) UpdateContactStatus(fromUsername, toUsername, status string) error {
+	result, err := a.db.Exec(updateContactStatusQuery, status, fromUsername, toUsername)
+	if err != nil {
+		return err
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return ErrUserNotFound
+	}
+	return nil
+}
+
+// DeleteContact removes a contact relationship in both directions
+func (a *Manager) DeleteContact(userA, userB string) error {
+	_, err := a.db.Exec(deleteContactQuery, userA, userB, userB, userA)
+	return err
+}
+
+// BlockContact blocks a user (sets status to blocked or creates blocked entry)
+func (a *Manager) BlockContact(fromUsername, toUsername string) error {
+	// Delete any existing relationship first
+	a.DeleteContact(fromUsername, toUsername)
+	// Insert blocked entry
+	return a.AddContact(fromUsername, toUsername, ContactStatusBlocked)
+}
+
+// IsBlocked checks if either user has blocked the other
+func (a *Manager) IsBlocked(userA, userB string) (bool, error) {
+	row := a.db.QueryRow(selectIsBlockedQuery, userA, userB, userB, userA)
+	var count int
+	if err := row.Scan(&count); err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// SearchUsers searches for users by username or display name
+func (a *Manager) SearchUsers(query, excludeUser string) ([]*UserSearchResult, error) {
+	likeQuery := "%" + query + "%"
+	rows, err := a.db.Query(searchUsersQuery, likeQuery, likeQuery, excludeUser)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	results := make([]*UserSearchResult, 0)
+	for rows.Next() {
+		r := &UserSearchResult{}
+		var avatarID string
+		if err := rows.Scan(&r.Username, &r.DisplayName, &r.Bio, &avatarID); err != nil {
+			return nil, err
+		}
+		if avatarID != "" {
+			r.AvatarURL = "/v1/coop/profile/avatar/" + avatarID
+		}
+		results = append(results, r)
+	}
+	return results, rows.Err()
+}
+
+// TopicMeta returns the metadata for a topic
+func (a *Manager) TopicMeta(topic string) (*TopicMeta, error) {
+	row := a.db.QueryRow(selectTopicMetaQuery, topic)
+	meta := &TopicMeta{}
+	if err := row.Scan(&meta.Topic, &meta.DisplayName, &meta.Description, &meta.AvatarID, &meta.CreatedBy, &meta.CreatedAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return meta, nil
+}
+
+// SetTopicMeta creates or updates topic metadata
+func (a *Manager) SetTopicMeta(topic, displayName, description, avatarID, createdBy string) error {
+	_, err := a.db.Exec(upsertTopicMetaQuery, topic, displayName, description, avatarID, createdBy)
+	return err
+}
+
+// DMTopics returns all DM topic names for a user
+func (a *Manager) DMTopics(username string) ([]string, error) {
+	rows, err := a.db.Query(selectDMTopicsQuery, username)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	topics := make([]string, 0)
+	for rows.Next() {
+		var topic string
+		if err := rows.Scan(&topic); err != nil {
+			return nil, err
+		}
+		// Unescape underscores stored by AllowAccess (toSQLWildcard)
+		topic = strings.ReplaceAll(topic, "\\_", "_")
+		if strings.HasPrefix(topic, "dm_") {
+			topics = append(topics, topic)
+		}
+	}
+	return topics, rows.Err()
 }
 
 func nullString(s string) sql.NullString {

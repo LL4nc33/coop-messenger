@@ -33,6 +33,8 @@ import CelebrationIcon from "@mui/icons-material/Celebration";
 import SubscribeDialog from "./SubscribeDialog";
 import UserAvatar from "./UserAvatar";
 const UserProfile = lazy(() => import("./UserProfile"));
+const ContactList = lazy(() => import("./ContactList"));
+const GroupCreate = lazy(() => import("./GroupCreate"));
 import { formatShortDateTime, topicDisplayName, topicUrl } from "../app/utils";
 import routes from "./routes";
 import { ConnectionState } from "../app/Connection";
@@ -119,6 +121,8 @@ const NavList = (props) => {
   const [subscribeDialogOpen, setSubscribeDialogOpen] = useState(false);
   const [versionChanged, setVersionChanged] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [contactsOpen, setContactsOpen] = useState(false);
+  const [groupCreateOpen, setGroupCreateOpen] = useState(false);
 
   const handleVersionChange = () => {
     setVersionChanged(true);
@@ -253,6 +257,14 @@ const NavList = (props) => {
             <ListItemText primary={t("nav_button_my_profile", "Mein Profil")} />
           </ListItemButton>
         )}
+        {session.exists() && (
+          <ListItemButton onClick={() => setContactsOpen(true)}>
+            <ListItemIcon>
+              <Person />
+            </ListItemIcon>
+            <ListItemText primary={t("nav_button_contacts", "Kontakte")} />
+          </ListItemButton>
+        )}
         {account?.role === "admin" && (
           <ListItemButton onClick={() => navigate(routes.admin)} selected={location.pathname === routes.admin}>
             <ListItemIcon>
@@ -322,6 +334,35 @@ const NavList = (props) => {
             open={profileOpen}
             onClose={() => setProfileOpen(false)}
             username={session.username()}
+          />
+        </Suspense>
+      )}
+      {contactsOpen && (
+        <Suspense fallback={null}>
+          <ContactList
+            open={contactsOpen}
+            onClose={() => setContactsOpen(false)}
+            onStartDM={(topic) => {
+              // Subscribe to the DM topic and navigate
+              const baseUrl = config.base_url;
+              subscriptionManager.add(baseUrl, topic).then((subscription) => {
+                navigate(routes.forSubscription(subscription));
+              });
+            }}
+          />
+        </Suspense>
+      )}
+      {groupCreateOpen && (
+        <Suspense fallback={null}>
+          <GroupCreate
+            open={groupCreateOpen}
+            onClose={() => setGroupCreateOpen(false)}
+            onCreated={(topic) => {
+              const baseUrl = config.base_url;
+              subscriptionManager.add(baseUrl, topic).then((subscription) => {
+                navigate(routes.forSubscription(subscription));
+              });
+            }}
           />
         </Suspense>
       )}

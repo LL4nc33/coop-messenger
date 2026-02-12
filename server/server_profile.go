@@ -233,6 +233,11 @@ func (s *Server) handleProfileUpdate(w http.ResponseWriter, r *http.Request, v *
 	if err := s.userManager.UpdateProfile(u.ID, displayName, bio); err != nil {
 		return err
 	}
+	if req.Privacy != nil {
+		if err := s.userManager.UpdateProfilePrivacy(u.Name, *req.Privacy); err != nil {
+			return err
+		}
+	}
 
 	logvr(v, r).Tag(tagProfile).Info("Profile updated for user %s", u.Name)
 	// Return updated profile
@@ -285,4 +290,5 @@ func (s *Server) handleProfilesByTopic(w http.ResponseWriter, r *http.Request, v
 type apiProfileUpdateRequest struct {
 	DisplayName *string `json:"display_name,omitempty"`
 	Bio         *string `json:"bio,omitempty"`
+	Privacy     *string `json:"privacy,omitempty"`
 }

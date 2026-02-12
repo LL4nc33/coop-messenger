@@ -593,6 +593,34 @@ func (s *Server) handleInternal(w http.ResponseWriter, r *http.Request, v *visit
 		return s.ensureUser(s.handleReactionDelete)(w, r, v)
 	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/coop/reactions" {
 		return s.ensureUser(s.handleReactionsByTopic)(w, r, v)
+	// Coop: Contacts
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/coop/contacts" {
+		return s.ensureUser(s.handleContactList)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/coop/contacts/requests" {
+		return s.ensureUser(s.handleContactRequests)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/coop/contacts" {
+		return s.ensureUser(s.handleContactAdd)(w, r, v)
+	} else if r.Method == http.MethodPost && strings.HasPrefix(r.URL.Path, "/v1/coop/contacts/") && strings.HasSuffix(r.URL.Path, "/block") {
+		return s.ensureUser(s.handleContactBlock)(w, r, v)
+	} else if r.Method == http.MethodPut && strings.HasPrefix(r.URL.Path, "/v1/coop/contacts/") {
+		return s.ensureUser(s.handleContactUpdate)(w, r, v)
+	} else if r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, "/v1/coop/contacts/") {
+		return s.ensureUser(s.handleContactDelete)(w, r, v)
+	// Coop: User Search
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/coop/users/search" {
+		return s.ensureUser(s.handleUserSearch)(w, r, v)
+	// Coop: DMs
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/coop/dm" {
+		return s.ensureUser(s.handleDMCreate)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/coop/dm" {
+		return s.ensureUser(s.handleDMList)(w, r, v)
+	// Coop: Groups / Topic Meta
+	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/coop/groups" {
+		return s.ensureUser(s.handleGroupCreate)(w, r, v)
+	} else if r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/v1/coop/topics/") && strings.HasSuffix(r.URL.Path, "/meta") {
+		return s.ensureUser(s.handleTopicMetaGet)(w, r, v)
+	} else if r.Method == http.MethodPatch && strings.HasPrefix(r.URL.Path, "/v1/coop/topics/") && strings.HasSuffix(r.URL.Path, "/meta") {
+		return s.ensureUser(s.handleTopicMetaUpdate)(w, r, v)
 	} else if r.Method == http.MethodPost && r.URL.Path == "/v1/join-requests" {
 		return s.ensureUser(s.limitRequests(s.handleJoinRequestCreate))(w, r, v)
 	} else if r.Method == http.MethodGet && r.URL.Path == "/v1/join-requests" {

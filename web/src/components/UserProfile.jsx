@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Box, Button, Chip, CircularProgress, Dialog, IconButton, TextField, Typography } from "@mui/material";
+import { Box, Button, Chip, CircularProgress, Dialog, FormControl, IconButton, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useTranslation } from "react-i18next";
 import UserAvatar from "./UserAvatar";
 import session from "../app/Session";
 import config from "../app/config";
+import accountApi from "../app/AccountApi";
 import { maybeWithBearerAuth } from "../app/utils";
 
 const statusOptions = [
@@ -142,9 +144,62 @@ const UserProfile = ({ open, onClose, username, initialEditMode = false }) => {
     }
   };
 
-  const handleSendMessage = () => {
-    onClose();
-    // Navigate to a DM or existing chat - for now close the modal
+  const [privacy, setPrivacy] = useState("request");
+  const [contactAction, setContactAction] = useState(null); // null, "sent", "add"
+
+  // Check contact status for non-own profiles
+  useEffect(() => {
+    if (isOwnProfile || !username || !open) return;
+    const checkContact = async () => {
+      try {
+        const contacts = await accountApi.getContacts();
+        const isContact = contacts.some((c) => c.username === username);
+        setContactAction(isContact ? null : "add");
+      } catch {
+        setContactAction("add");
+      }
+    };
+    checkContact();
+  }, [username, open, isOwnProfile]);
+
+  useEffect(() => {
+    if (profile?.privacy) setPrivacy(profile.privacy);
+  }, [profile]);
+
+  const handleSendMessage = async () => {
+    try {
+      const result = await accountApi.startDM(username);
+      onClose();
+      // Navigate to the DM topic
+      window.location.hash = `#/${result.topic}`;
+    } catch (e) {
+      console.warn("[UserProfile] Start DM failed", e);
+    }
+  };
+
+  const handleAddContact = async () => {
+    try {
+      await accountApi.addContact(username);
+      setContactAction("sent");
+    } catch (e) {
+      console.warn("[UserProfile] Add contact failed", e);
+    }
+  };
+
+  const handlePrivacyChange = async (newPrivacy) => {
+    setPrivacy(newPrivacy);
+    try {
+      await fetch(`${config.base_url}/v1/coop/profile`, {
+        method: "PATCH",
+        headers: {
+          ...maybeWithBearerAuth({}, session.token()),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ privacy: newPrivacy }),
+      });
+    } catch (e) {
+      console.warn("[UserProfile] Privacy update failed", e);
+    }
   };
 
   return (
@@ -261,6 +316,19 @@ const UserProfile = ({ open, onClose, username, initialEditMode = false }) => {
                   />
                 ))}
               </Box>
+              <FormControl fullWidth size="small">
+                <InputLabel>{t("profile_privacy_label", "Wer kann mich kontaktieren?")}</InputLabel>
+                <Select
+                  value={privacy}
+                  label={t("profile_privacy_label", "Wer kann mich kontaktieren?")}
+                  onChange={(e) => handlePrivacyChange(e.target.value)}
+                  sx={{ borderRadius: 0 }}
+                >
+                  <MenuItem value="open">{t("profile_privacy_open", "Alle (offen)")}</MenuItem>
+                  <MenuItem value="request">{t("profile_privacy_request", "Nur mit Anfrage")}</MenuItem>
+                  <MenuItem value="invite_only">{t("profile_privacy_invite", "Nur per Einladung")}</MenuItem>
+                </Select>
+              </FormControl>
               <Button
                 onClick={handleSave}
                 disabled={saving}
@@ -330,28 +398,54 @@ const UserProfile = ({ open, onClose, username, initialEditMode = false }) => {
                   {t("profile_edit", "Profil bearbeiten")}
                 </Button>
               ) : (
-                <Button
-                  onClick={handleSendMessage}
-                  fullWidth
-                  sx={{
-                    border: "3px solid var(--coop-black)",
-                    borderRadius: 0,
-                    boxShadow: "4px 4px 0px var(--coop-shadow-color)",
-                    backgroundColor: "var(--coop-accent)",
-                    color: "var(--coop-black)",
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    mt: 1,
-                    "&:hover": {
-                      transform: "translate(-2px, -2px)",
-                      boxShadow: "6px 6px 0px var(--coop-shadow-color)",
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1, width: "100%", mt: 1 }}>
+                  <Button
+                    onClick={handleSendMessage}
+                    fullWidth
+                    sx={{
+                      border: "3px solid var(--coop-black)",
+                      borderRadius: 0,
+                      boxShadow: "4px 4px 0px var(--coop-shadow-color)",
                       backgroundColor: "var(--coop-accent)",
-                    },
-                  }}
-                >
-                  {t("profile_send_message", "Nachricht senden")}
-                </Button>
+                      color: "var(--coop-black)",
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      "&:hover": {
+                        transform: "translate(-2px, -2px)",
+                        boxShadow: "6px 6px 0px var(--coop-shadow-color)",
+                        backgroundColor: "var(--coop-accent)",
+                      },
+                    }}
+                  >
+                    {t("profile_send_message", "Nachricht senden")}
+                  </Button>
+                  {contactAction === "add" && (
+                    <Button
+                      onClick={handleAddContact}
+                      fullWidth
+                      startIcon={<PersonAddIcon />}
+                      sx={{
+                        border: "2px solid var(--coop-black)",
+                        borderRadius: 0,
+                        boxShadow: "2px 2px 0px var(--coop-shadow-color)",
+                        color: "var(--coop-black)",
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        "&:hover": {
+                          backgroundColor: "var(--coop-gray-100)",
+                        },
+                      }}
+                    >
+                      {t("profile_add_contact", "Als Kontakt hinzufuegen")}
+                    </Button>
+                  )}
+                  {contactAction === "sent" && (
+                    <Typography variant="body2" sx={{ textAlign: "center", color: "var(--coop-green)", fontWeight: 600 }}>
+                      {t("profile_contact_sent", "Kontaktanfrage gesendet")}
+                    </Typography>
+                  )}
+                </Box>
               )}
             </>
           )}
