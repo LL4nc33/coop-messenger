@@ -550,5 +550,8 @@
   "profile_not_found": "Profil nicht gefunden",
   "member_list_title": "Mitglieder",
   "member_list_empty": "Keine Mitglieder gefunden",
-  "action_bar_member_list": "Mitglieder anzeigen"
+  "action_bar_member_list": "Mitglieder anzeigen",
+  "action_bar_edit_profile": "Profil bearbeiten",
+  "action_bar_profile_account": "Konto",
+  "nav_button_my_profile": "Mein Profil"
 }

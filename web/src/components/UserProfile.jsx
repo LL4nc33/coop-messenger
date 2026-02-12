@@ -48,11 +48,11 @@ const OnlineIndicator = ({ lastSeen }) => {
   );
 };
 
-const UserProfile = ({ open, onClose, username }) => {
+const UserProfile = ({ open, onClose, username, initialEditMode = false }) => {
   const { t } = useTranslation();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(initialEditMode);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
@@ -82,7 +82,8 @@ const UserProfile = ({ open, onClose, username }) => {
 
   useEffect(() => {
     fetchProfile();
-  }, [fetchProfile]);
+    setEditMode(initialEditMode);
+  }, [fetchProfile, initialEditMode]);
 
   const handleSave = async () => {
     setSaving(true);

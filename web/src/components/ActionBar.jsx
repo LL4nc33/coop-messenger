@@ -8,7 +8,7 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
 import { useTranslation } from "react-i18next";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import { Logout, Person, Settings } from "@mui/icons-material";
+import { Edit, Logout, Person, Settings } from "@mui/icons-material";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
 import config from "../app/config";
@@ -20,7 +20,9 @@ import { topicDisplayName, darkModeEnabled } from "../app/utils";
 import Navigation from "./Navigation";
 import accountApi from "../app/AccountApi";
 import PopupMenu from "./PopupMenu";
+import UserAvatar from "./UserAvatar";
 const MemberList = lazy(() => import("./MemberList"));
+const UserProfile = lazy(() => import("./UserProfile"));
 import { SubscriptionPopup } from "./SubscriptionPopup";
 import { useIsLaunchedPWA } from "./hooks";
 import prefs, { THEME } from "../app/Prefs";
@@ -176,6 +178,8 @@ const SettingsIcons = (props) => {
 const ProfileIcon = () => {
   const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileEditMode, setProfileEditMode] = useState(false);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
 
@@ -185,6 +189,12 @@ const ProfileIcon = () => {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleOpenProfile = (editMode = false) => {
+    handleClose();
+    setProfileEditMode(editMode);
+    setProfileOpen(true);
   };
 
   const handleLogout = async () => {
@@ -216,14 +226,26 @@ const ProfileIcon = () => {
         </Button>
       )}
       <PopupMenu horizontal="right" anchorEl={anchorEl} open={open} onClose={handleClose}>
-        <MenuItem onClick={() => navigate(routes.account)}>
+        <MenuItem onClick={() => handleOpenProfile(false)}>
           <ListItemIcon>
-            <Person />
+            <UserAvatar username={session.username()} size="sm" />
           </ListItemIcon>
           <b>{session.username()}</b>
         </MenuItem>
         <Divider />
-        <MenuItem onClick={() => navigate(routes.settings)}>
+        <MenuItem onClick={() => handleOpenProfile(true)}>
+          <ListItemIcon>
+            <Edit fontSize="small" />
+          </ListItemIcon>
+          {t("action_bar_edit_profile", "Profil bearbeiten")}
+        </MenuItem>
+        <MenuItem onClick={() => { handleClose(); navigate(routes.account); }}>
+          <ListItemIcon>
+            <Person fontSize="small" />
+          </ListItemIcon>
+          {t("action_bar_profile_account", "Konto")}
+        </MenuItem>
+        <MenuItem onClick={() => { handleClose(); navigate(routes.settings); }}>
           <ListItemIcon>
             <Settings fontSize="small" />
           </ListItemIcon>
@@ -236,6 +258,16 @@ const ProfileIcon = () => {
           {t("action_bar_profile_logout")}
         </MenuItem>
       </PopupMenu>
+      {profileOpen && (
+        <Suspense fallback={null}>
+          <UserProfile
+            open={profileOpen}
+            onClose={() => setProfileOpen(false)}
+            username={session.username()}
+            initialEditMode={profileEditMode}
+          />
+        </Suspense>
+      )}
     </>
   );
 };

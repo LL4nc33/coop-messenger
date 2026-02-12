@@ -19,7 +19,7 @@ import {
   useTheme,
 } from "@mui/material";
 import * as React from "react";
-import { useContext, useState, useRef, useEffect, useCallback } from "react";
+import { useContext, useState, useRef, useEffect, useCallback, lazy, Suspense } from "react";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import Person from "@mui/icons-material/Person";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -32,6 +32,7 @@ import { Trans, useTranslation } from "react-i18next";
 import CelebrationIcon from "@mui/icons-material/Celebration";
 import SubscribeDialog from "./SubscribeDialog";
 import UserAvatar from "./UserAvatar";
+const UserProfile = lazy(() => import("./UserProfile"));
 import { formatShortDateTime, topicDisplayName, topicUrl } from "../app/utils";
 import routes from "./routes";
 import { ConnectionState } from "../app/Connection";
@@ -117,6 +118,7 @@ const NavList = (props) => {
   const [subscribeDialogKey, setSubscribeDialogKey] = useState(0);
   const [subscribeDialogOpen, setSubscribeDialogOpen] = useState(false);
   const [versionChanged, setVersionChanged] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const handleVersionChange = () => {
     setVersionChanged(true);
@@ -244,11 +246,11 @@ const NavList = (props) => {
           </>
         )}
         {session.exists() && (
-          <ListItemButton onClick={handleAccountClick} selected={location.pathname === routes.account}>
-            <ListItemIcon>
-              <Person />
+          <ListItemButton onClick={() => setProfileOpen(true)}>
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <UserAvatar username={session.username()} size="sm" />
             </ListItemIcon>
-            <ListItemText primary={t("nav_button_account")} />
+            <ListItemText primary={t("nav_button_my_profile", "Mein Profil")} />
           </ListItemButton>
         )}
         {account?.role === "admin" && (
@@ -314,6 +316,15 @@ const NavList = (props) => {
         onCancel={handleSubscribeReset}
         onSuccess={handleSubscribeSubmit}
       />
+      {profileOpen && (
+        <Suspense fallback={null}>
+          <UserProfile
+            open={profileOpen}
+            onClose={() => setProfileOpen(false)}
+            username={session.username()}
+          />
+        </Suspense>
+      )}
     </>
   );
 };
