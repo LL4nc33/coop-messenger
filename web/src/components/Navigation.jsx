@@ -31,6 +31,7 @@ import ArticleIcon from "@mui/icons-material/Article";
 import { Trans, useTranslation } from "react-i18next";
 import CelebrationIcon from "@mui/icons-material/Celebration";
 import SubscribeDialog from "./SubscribeDialog";
+import UserAvatar from "./UserAvatar";
 import { formatShortDateTime, topicDisplayName, topicUrl } from "../app/utils";
 import routes from "./routes";
 import { ConnectionState } from "../app/Connection";
@@ -418,12 +419,12 @@ const SubscriptionItem = (props) => {
   const unreadCount = subscription.new <= 99 ? subscription.new : "99+";
   const displayName = topicDisplayName(subscription);
   const ariaLabel = subscription.state === ConnectionState.Connecting ? `${displayName} (${t("nav_button_connecting")})` : displayName;
-  const icon =
-    subscription.state === ConnectionState.Connecting ? (
-      <CircularProgress size="24px" />
-    ) : (
-      <ChatBubbleOutlineIcon />
-    );
+  const lastSender = lastNotification?.sender;
+  const sidebarAvatar = subscription.state === ConnectionState.Connecting ? (
+    <CircularProgress size="24px" />
+  ) : (
+    <UserAvatar username={lastSender || displayName} size="sm" />
+  );
 
   // Letzte Nachricht fuer Vorschau laden
   const lastNotification = useLiveQuery(
@@ -451,7 +452,7 @@ const SubscriptionItem = (props) => {
   return (
     <>
       <ListItemButton onClick={handleClick} selected={props.selected} aria-label={ariaLabel} aria-live="polite" sx={{ alignItems: "flex-start", py: 1 }}>
-        <ListItemIcon sx={{ mt: 1 }}>{icon}</ListItemIcon>
+        <ListItemIcon sx={{ mt: 1, minWidth: 40 }}>{sidebarAvatar}</ListItemIcon>
         <ListItemText
           primary={
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

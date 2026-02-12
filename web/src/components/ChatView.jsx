@@ -12,6 +12,8 @@ import { NotificationBody, UserActions } from "./Notifications";
 import { ReplyContext } from "./App";
 import EmojiReactionPicker from "./EmojiReactionPicker";
 import ImageLightbox from "./ImageLightbox";
+import UserAvatar from "./UserAvatar";
+import UserProfile from "./UserProfile";
 
 const QuoteBlock = ({ replyToText, replyToSender }) => (
   <Box sx={{
@@ -251,11 +253,13 @@ const LinkPreviewBlock = ({ urls }) => {
   );
 };
 
-const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionToggle, onReactionAdd }) => {
+const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionToggle, onReactionAdd, profilesCache, onAvatarClick }) => {
   const { t, i18n } = useTranslation();
   const isOwn = notification.sender === session.username();
   const otherTags = unmatchedTags(notification.tags);
   const urls = extractUrls(notification.message);
+  const senderProfile = profilesCache?.[notification.sender];
+  const displayName = senderProfile?.display_name || notification.sender;
 
   return (
     <Box
@@ -263,10 +267,21 @@ const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionTog
       sx={{
         display: "flex",
         flexDirection: isOwn ? "row-reverse" : "row",
+        alignItems: "flex-end",
+        gap: 1,
         maxWidth: "100%",
         "&:hover .reply-btn": { opacity: 1 },
       }}
     >
+      {!isOwn && notification.sender && (
+        <UserAvatar
+          username={notification.sender}
+          displayName={senderProfile?.display_name}
+          avatarUrl={senderProfile?.avatar_url}
+          size="sm"
+          onClick={() => onAvatarClick?.(notification.sender)}
+        />
+      )}
       <Box sx={{
         maxWidth: "75%",
         display: "flex",
@@ -274,8 +289,12 @@ const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionTog
         alignItems: isOwn ? "flex-end" : "flex-start",
       }}>
         {!isOwn && notification.sender && (
-          <Typography variant="caption" sx={{ fontWeight: 700, mb: 0.25, px: 0.5, color: "text.secondary" }}>
-            {notification.sender}
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 700, mb: 0.25, px: 0.5, color: "text.secondary", cursor: "pointer" }}
+            onClick={() => onAvatarClick?.(notification.sender)}
+          >
+            {displayName}
           </Typography>
         )}
 
@@ -405,6 +424,33 @@ const ChatView = ({ notifications, subscription }) => {
   const wasNearBottomRef = useRef(true);
   const prevMessageCountRef = useRef(0);
   const [reactionsMap, setReactionsMap] = useState({});
+  const [profilesCache, setProfilesCache] = useState({});
+  const [profileUser, setProfileUser] = useState(null);
+
+  // Load profiles for topic members
+  useEffect(() => {
+    if (!subscription) return;
+    const loadProfiles = async () => {
+      try {
+        const user = await userManager.get(subscription.baseUrl);
+        const headers = maybeWithAuth({}, user);
+        const resp = await fetch(
+          `${subscription.baseUrl}/v1/coop/profiles?topic=${encodeURIComponent(subscription.topic)}`,
+          { headers },
+        );
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const cache = {};
+        for (const p of data) {
+          cache[p.username] = p;
+        }
+        setProfilesCache(cache);
+      } catch (e) {
+        // Profiles are optional, don't break chat
+      }
+    };
+    loadProfiles();
+  }, [subscription?.baseUrl, subscription?.topic]);
 
   const allMessages = notifications.filter(n => n.event === "message");
   const messages = allMessages.length > maxCount
@@ -548,6 +594,7 @@ const ChatView = ({ notifications, subscription }) => {
   };
 
   return (
+    <>
     <Container maxWidth="md" sx={{ pt: 2, pb: "100px" }}>
       {messages.length === 0 && (
         <Box sx={{ textAlign: "center", py: 8, color: "text.secondary" }}>
@@ -591,6 +638,8 @@ const ChatView = ({ notifications, subscription }) => {
                 reactions={reactionsMap[notification.id]}
                 onReactionToggle={handleReactionToggle}
                 onReactionAdd={handleReactionToggle}
+                profilesCache={profilesCache}
+                onAvatarClick={setProfileUser}
               />
             </React.Fragment>
           );
@@ -635,6 +684,13 @@ const ChatView = ({ notifications, subscription }) => {
         </Fab>
       )}
     </Container>
+
+    <UserProfile
+      open={!!profileUser}
+      onClose={() => setProfileUser(null)}
+      username={profileUser}
+    />
+    </>
   );
 };
 

@@ -3,6 +3,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import NotificationsOffIcon from "@mui/icons-material/NotificationsOff";
 import { useTranslation } from "react-i18next";
@@ -10,6 +11,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { Logout, Person, Settings } from "@mui/icons-material";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
+import config from "../app/config";
 import session from "../app/Session";
 import subscriptionManager from "../app/SubscriptionManager";
 import routes from "./routes";
@@ -18,6 +20,7 @@ import { topicDisplayName, darkModeEnabled } from "../app/utils";
 import Navigation from "./Navigation";
 import accountApi from "../app/AccountApi";
 import PopupMenu from "./PopupMenu";
+import MemberList from "./MemberList";
 import { SubscriptionPopup } from "./SubscriptionPopup";
 import { useIsLaunchedPWA } from "./hooks";
 import prefs, { THEME } from "../app/Prefs";
@@ -129,6 +132,7 @@ const ActionBar = (props) => {
 const SettingsIcons = (props) => {
   const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = useState(null);
+  const [memberListOpen, setMemberListOpen] = useState(false);
   const { subscription } = props;
 
   const handleToggleMute = async () => {
@@ -138,6 +142,11 @@ const SettingsIcons = (props) => {
 
   return (
     <>
+      <Tooltip title={t("action_bar_member_list", "Mitglieder anzeigen")}>
+        <IconButton color="inherit" size="large" edge="end" onClick={() => setMemberListOpen(true)} aria-label={t("action_bar_member_list", "Mitglieder anzeigen")}>
+          <PeopleOutlineIcon />
+        </IconButton>
+      </Tooltip>
       <Tooltip title={subscription.mutedUntil ? t("action_bar_unmute_notifications", "Stummschaltung aufheben") : t("action_bar_mute_notifications", "Stumm schalten")}>
         <IconButton color="inherit" size="large" edge="end" onClick={handleToggleMute} aria-label={t("action_bar_toggle_mute")}>
           {subscription.mutedUntil ? <NotificationsOffIcon /> : <NotificationsIcon />}
@@ -155,6 +164,7 @@ const SettingsIcons = (props) => {
         </IconButton>
       </Tooltip>
       <SubscriptionPopup subscription={subscription} anchor={anchorEl} placement="right" onClose={() => setAnchorEl(null)} />
+      <MemberList open={memberListOpen} onClose={() => setMemberListOpen(false)} topic={subscription.topic} />
     </>
   );
 };
