@@ -56,6 +56,15 @@ type Auther interface {
 	Authorize(user *User, topic string, perm Permission) error
 }
 
+// Profile represents a user's public profile (Coop)
+type Profile struct {
+	Username    string `json:"username"`
+	DisplayName string `json:"display_name"`
+	Bio         string `json:"bio"`
+	AvatarURL   string `json:"avatar_url,omitempty"`
+	LastSeen    int64  `json:"last_seen"`
+}
+
 // Token represents a user token, including expiry date
 type Token struct {
 	Value       string

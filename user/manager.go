@@ -123,6 +123,14 @@ const (
 			PRIMARY KEY (user_id, phone_number),
 			FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE
 		);
+		CREATE TABLE IF NOT EXISTS user_profile (
+			user_id TEXT PRIMARY KEY,
+			display_name TEXT NOT NULL DEFAULT '',
+			bio TEXT NOT NULL DEFAULT '',
+			avatar_id TEXT NOT NULL DEFAULT '',
+			last_seen INTEGER NOT NULL DEFAULT 0,
+			FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE
+		);
 		CREATE TABLE IF NOT EXISTS schemaVersion (
 			id INT PRIMARY KEY,
 			version INT NOT NULL
@@ -328,7 +336,7 @@ const (
 
 // Schema management queries
 const (
-	currentSchemaVersion     = 6
+	currentSchemaVersion     = 7
 	insertSchemaVersion      = `INSERT INTO schemaVersion VALUES (1, ?)`
 	updateSchemaVersion      = `UPDATE schemaVersion SET version = ? WHERE id = 1`
 	selectSchemaVersionQuery = `SELECT version FROM schemaVersion WHERE id = 1`
@@ -537,6 +545,61 @@ const (
 		-- Re-enable foreign keys
 		PRAGMA foreign_keys=on;
 	`
+
+	// 6 -> 7: Coop user profiles
+	migrate6To7UpdateQueries = `
+		CREATE TABLE IF NOT EXISTS user_profile (
+			user_id TEXT PRIMARY KEY,
+			display_name TEXT NOT NULL DEFAULT '',
+			bio TEXT NOT NULL DEFAULT '',
+			avatar_id TEXT NOT NULL DEFAULT '',
+			last_seen INTEGER NOT NULL DEFAULT 0,
+			FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE
+		);
+		INSERT OR IGNORE INTO user_profile (user_id)
+			SELECT id FROM user WHERE role != 'anonymous';
+	`
+
+	// Profile CRUD queries
+	selectProfileByUserIDQuery = `
+		SELECT p.display_name, p.bio, p.avatar_id, p.last_seen
+		FROM user_profile p
+		WHERE p.user_id = ?
+	`
+	selectProfileByUsernameQuery = `
+		SELECT u.user, p.display_name, p.bio, p.avatar_id, p.last_seen
+		FROM user_profile p
+		JOIN user u ON u.id = p.user_id
+		WHERE u.user = ?
+	`
+	selectProfilesByTopicQuery = `
+		SELECT u.user, p.display_name, p.bio, p.avatar_id, p.last_seen
+		FROM user_access a
+		JOIN user u ON u.id = a.user_id
+		LEFT JOIN user_profile p ON p.user_id = u.id
+		WHERE a.topic = ? AND u.role != 'anonymous'
+	`
+	upsertProfileQuery = `
+		INSERT INTO user_profile (user_id, display_name, bio, avatar_id, last_seen)
+		VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT (user_id) DO UPDATE SET
+			display_name = excluded.display_name,
+			bio = excluded.bio,
+			avatar_id = excluded.avatar_id,
+			last_seen = excluded.last_seen
+	`
+	updateProfileDisplayNameBioQuery = `
+		UPDATE user_profile SET display_name = ?, bio = ? WHERE user_id = ?
+	`
+	updateProfileAvatarQuery = `
+		UPDATE user_profile SET avatar_id = ? WHERE user_id = ?
+	`
+	updateProfileLastSeenQuery = `
+		UPDATE user_profile SET last_seen = ? WHERE user_id = ?
+	`
+	selectProfileAvatarIDQuery = `
+		SELECT avatar_id FROM user_profile WHERE user_id = ?
+	`
 )
 
 var (
@@ -546,6 +609,7 @@ var (
 		3: migrateFrom3,
 		4: migrateFrom4,
 		5: migrateFrom5,
+		6: migrateFrom6,
 	}
 )
 
@@ -1082,6 +1146,12 @@ func (a *Manager) addUserTx(tx *sql.Tx, username, password string, role Role, ha
 			return ErrUserExists
 		}
 		return err
+	}
+	// Coop: Create empty profile for new user
+	if role != RoleAnonymous {
+		if _, err = tx.Exec(upsertProfileQuery, userID, "", "", "", 0); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -2094,6 +2164,120 @@ func migrateFrom5(db *sql.DB) error {
 		return err
 	}
 	return tx.Commit()
+}
+
+func migrateFrom6(db *sql.DB) error {
+	log.Tag(tag).Info("Migrating user database schema: from 6 to 7")
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(migrate6To7UpdateQueries); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(updateSchemaVersion, 7); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// Profile returns the profile for a given username
+func (a *Manager) Profile(username string) (*Profile, error) {
+	row := a.db.QueryRow(selectProfileByUsernameQuery, username)
+	profile := &Profile{}
+	var avatarID string
+	if err := row.Scan(&profile.Username, &profile.DisplayName, &profile.Bio, &avatarID, &profile.LastSeen); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	if avatarID != "" {
+		profile.AvatarURL = "/v1/coop/profile/avatar/" + avatarID
+	}
+	return profile, nil
+}
+
+// ProfileByUserID returns the profile for a given user ID
+func (a *Manager) ProfileByUserID(userID string) (*Profile, error) {
+	row := a.db.QueryRow(selectProfileByUserIDQuery, userID)
+	profile := &Profile{}
+	var avatarID string
+	if err := row.Scan(&profile.DisplayName, &profile.Bio, &avatarID, &profile.LastSeen); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	if avatarID != "" {
+		profile.AvatarURL = "/v1/coop/profile/avatar/" + avatarID
+	}
+	return profile, nil
+}
+
+// ProfilesByTopic returns all profiles for users with access to a topic
+func (a *Manager) ProfilesByTopic(topic string) ([]*Profile, error) {
+	rows, err := a.db.Query(selectProfilesByTopicQuery, topic)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	profiles := make([]*Profile, 0)
+	for rows.Next() {
+		profile := &Profile{}
+		var avatarID sql.NullString
+		var displayName, bio sql.NullString
+		var lastSeen sql.NullInt64
+		if err := rows.Scan(&profile.Username, &displayName, &bio, &avatarID, &lastSeen); err != nil {
+			return nil, err
+		}
+		if displayName.Valid {
+			profile.DisplayName = displayName.String
+		}
+		if bio.Valid {
+			profile.Bio = bio.String
+		}
+		if avatarID.Valid && avatarID.String != "" {
+			profile.AvatarURL = "/v1/coop/profile/avatar/" + avatarID.String
+		}
+		if lastSeen.Valid {
+			profile.LastSeen = lastSeen.Int64
+		}
+		profiles = append(profiles, profile)
+	}
+	return profiles, rows.Err()
+}
+
+// UpdateProfile updates display_name and bio for a user
+func (a *Manager) UpdateProfile(userID, displayName, bio string) error {
+	_, err := a.db.Exec(updateProfileDisplayNameBioQuery, displayName, bio, userID)
+	return err
+}
+
+// UpdateProfileAvatar updates the avatar_id for a user
+func (a *Manager) UpdateProfileAvatar(userID, avatarID string) error {
+	_, err := a.db.Exec(updateProfileAvatarQuery, avatarID, userID)
+	return err
+}
+
+// ProfileAvatarID returns the current avatar_id for a user
+func (a *Manager) ProfileAvatarID(userID string) (string, error) {
+	row := a.db.QueryRow(selectProfileAvatarIDQuery, userID)
+	var avatarID string
+	if err := row.Scan(&avatarID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
+		return "", err
+	}
+	return avatarID, nil
+}
+
+// UpdateProfileLastSeen updates the last_seen timestamp for a user
+func (a *Manager) UpdateProfileLastSeen(userID string, lastSeen int64) error {
+	_, err := a.db.Exec(updateProfileLastSeenQuery, lastSeen, userID)
+	return err
 }
 
 func nullString(s string) sql.NullString {
