@@ -3,7 +3,9 @@ import { Box, Button, Chip, CircularProgress, Dialog, FormControl, IconButton, I
 import CloseIcon from "@mui/icons-material/Close";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import UserAvatar from "./UserAvatar";
+import routes from "./routes";
 import session from "../app/Session";
 import config from "../app/config";
 import accountApi from "../app/AccountApi";
@@ -53,6 +55,7 @@ const OnlineIndicator = ({ lastSeen }) => {
 
 const UserProfile = ({ open, onClose, username, initialEditMode = false }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(initialEditMode);
@@ -183,7 +186,7 @@ const UserProfile = ({ open, onClose, username, initialEditMode = false }) => {
         // Non-critical - local displayName is sufficient
       }
       onClose();
-      window.location.hash = `#/${result.topic}`;
+      navigate(routes.forSubscription({ baseUrl: config.base_url, topic: result.topic }));
     } catch (e) {
       console.warn("[UserProfile] Start DM failed", e);
     }
@@ -359,6 +362,10 @@ const UserProfile = ({ open, onClose, username, initialEditMode = false }) => {
                     boxShadow: "6px 6px 0px var(--coop-shadow-color)",
                     backgroundColor: "var(--coop-accent)",
                   },
+                  "&:active": {
+                    boxShadow: "none",
+                    transform: "translate(2px, 2px)",
+                  },
                 }}
               >
                 {saving ? <CircularProgress size={20} /> : t("profile_save", "Profil speichern")}
@@ -405,6 +412,10 @@ const UserProfile = ({ open, onClose, username, initialEditMode = false }) => {
                       boxShadow: "6px 6px 0px var(--coop-shadow-color)",
                       backgroundColor: "var(--coop-accent)",
                     },
+                    "&:active": {
+                      boxShadow: "none",
+                      transform: "translate(2px, 2px)",
+                    },
                   }}
                 >
                   {t("profile_edit", "Profil bearbeiten")}
@@ -427,6 +438,10 @@ const UserProfile = ({ open, onClose, username, initialEditMode = false }) => {
                         transform: "translate(-2px, -2px)",
                         boxShadow: "6px 6px 0px var(--coop-shadow-color)",
                         backgroundColor: "var(--coop-accent)",
+                      },
+                      "&:active": {
+                        boxShadow: "none",
+                        transform: "translate(2px, 2px)",
                       },
                     }}
                   >

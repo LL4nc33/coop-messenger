@@ -14,26 +14,39 @@
 
 ## Completed
 
-### v0.0.1.1 — Foundation ✅
+### v0.0.1.0 — Foundation ✅
 - Forked ntfy v2.17.0 as base
 - Chat-oriented UI with message bubbles (own vs. others)
 - Neobrutalism design system (Space Grotesk, DM Sans, JetBrains Mono)
-- German i18n (en.json as single source)
+- German i18n (en.json as single source, 550+ keys)
+- Configurable accent color (4 presets + custom picker)
+- Dark mode throughout (CSS variables, no hardcoded colors)
+- SQLite migration 14→15 (sender_name + invites table)
+- 6 critical bugs fixed (cache persistence, invite flow, auth redirect)
 
-### v0.0.1.2 — Invite System ✅
+### v0.0.1.1 — Messenger Feeling ✅
+- Removed PublishDialog (949 lines dead code) — ChatInput only
+- Chat list with message preview + timestamp (WhatsApp-style)
+- Simplified SubscribeDialog (no reserve/server toggle, auto-ID)
+- 3-stage theme toggle (Light→Dark→System)
+
+### v0.0.1.2 — Invite System & Visual Polish ✅
 - Invite creation, redemption, link sharing
-- DB migration 14→15 (sender_name + invites table)
-
-### v0.0.1.3 — Access Control & Admin ✅
 - Join request system (request → approve/deny)
 - Admin Panel (Users, Chats + Join Requests, Invites)
-- `auth-default-access: deny-all` as default
+- Pixel-art pigeon logo (favicon, PWA, og:image, sidebar)
+- Shadow system with theme-independent shadow color
 - DB migration 15→16 (join_requests table)
 
-### v0.0.1.4 — UX & Polish ✅
-- Welcome dashboard, theme toggle (light/dark), accent colors
-- Chat-ID sharing, auto-generated chat IDs
-- SubscribeDialog, in-app documentation
+### v0.0.1.3 — Welcome & Sharing ✅
+- Welcome dashboard with recent chat cards
+- Chat-ID sharing (Share API + clipboard fallback)
+- Own messages no longer trigger notifications/unread badges
+
+### v0.0.1.4 — UX & Documentation ✅
+- In-app documentation (User + Admin tabs)
+- `auth-default-access: deny-all` as default
+- README, CONTRIBUTING, LICENSE (AGPLv3)
 
 ### v0.0.1.5 — UX Quick Wins ✅
 - Smart auto-scroll, chat sorting by activity
@@ -46,37 +59,77 @@
 - Link previews, markdown rendering
 - DB migration 16→17 (reactions table + reply fields)
 
+### v0.0.1.7 — User Profiles ✅
+- User avatars (upload/delete, display in bubbles + sidebar)
+- Display name (editable, separate from username)
+- User bio/status ("Verfügbar", "Beschäftigt", custom text)
+- "Zuletzt online" indicator (online/recently/offline)
+- Member list per chat (slide-out drawer with People icon)
+- Profile modal (click on avatar → see profile, edit own)
+- DB migration 6→7 in user.db (user_profile table)
+
+### v0.0.1.8 — Contacts & DMs ✅
+- Contact system (search, add, accept/reject/block)
+- Direct messages (1:1 chats with random hex topic IDs)
+- Group creation (name + members → group with topic_meta)
+- Privacy settings (open / request-only / invite-only)
+- DB migration 7→8 in user.db (user_contact, topic_meta, privacy)
+- DB migration 8→9 in user.db (dm_user_a/dm_user_b in topic_meta)
+
+### v0.0.1.9 — Social & Fun ✅
+- Typing indicator ("XY pickt..." with animation, 3s rate limit)
+- Nudge/poke system (shake animation, yellow bubble, 30s rate limit)
+- Slash commands (/gurr, /status, /flieg, /mitglieder)
+- Command palette (autocomplete dropdown, keyboard navigation)
+- 5 security fixes (SQL injection, goroutine leak, auth check, ReDoS)
+
+### v0.0.2.0 — UX Audit Fixes ✅
+- GroupCreate button in navigation (feature was unreachable)
+- Avatar pipeline: own profile picture in ActionBar + sidebar
+- DM navigation fix (useNavigate instead of window.location.hash)
+- Neobrutalism consistency (shadows, borders, hover states)
+
+### v0.0.2.1 — Chat Polish ✅
+- Message grouping (WhatsApp-style, 5-min window, compact groups)
+- Removed gray separator lines between messages (CSS fix)
+- Standard channels: coop-klatsch, coop-tech (all users)
+
+### v0.0.2.2 — Subscription Bug Fix ✅
+- Auto-subscription for DM recipients (chat appears in sidebar automatically)
+- Auto-subscription for group members on group creation
+- Auto-subscription on admin access grant (both endpoints)
+- Reply/emoji buttons overlay fix (no overlap with next message)
+
 ---
 
-## Phase 3 — Messenger Identity
+## Phase 3 — Security & Release
 
-> Coop soll sich anfühlen wie ein richtiger Messenger, nicht wie ein Notification-Tool.
+> Coop wird stabil und sicher genug für erste echte Nutzer.
 
-### v0.0.1.7 — User Profiles ✅
-- [x] User avatars (upload/delete, display in bubbles + sidebar)
-- [x] Display name (editable, separate from username)
-- [x] User bio/status ("Verfügbar", "Beschäftigt", custom text)
-- [x] "Zuletzt online" indicator (online/recently/offline)
-- [x] Member list per chat (slide-out drawer with People icon)
-- [x] Profile page/modal (click on avatar → see profile, edit own)
-- [x] DB migration 6→7 in user.db (user_profile table: display_name, bio, avatar_id, last_seen)
+### v0.0.3.0 — Release Readiness
+- [ ] Invite race condition fix (TOCTOU in server_invite.go)
+- [ ] NULL pointer check in ensureAdmin middleware
+- [ ] Container as non-root user (Dockerfile-coop)
+- [ ] Health check in docker-compose
+- [ ] Security headers (CSP, HSTS, X-Frame-Options)
+- [ ] CORS restrictions (instead of wildcard)
+- [ ] Password policy server-side (min 8 chars)
+- [ ] rehype-sanitize for markdown (prevent stored XSS)
 
-### v0.0.1.8 — Group Chat UX
-- [ ] Group names and descriptions (editable by creator/admin)
-- [ ] Group avatars
-- [ ] "XY hat die Gruppe erstellt" system messages
-- [ ] "XY ist beigetreten / hat verlassen" events
-- [ ] Group admin roles (creator can add/remove members)
-- [ ] Direct Messages (1:1 chats, auto-created, separate from groups)
-- [ ] Contact list / user search within the same server
+### v0.0.3.1 — Attachments & Media
+- [ ] Attachment button in ChatInput (paperclip icon)
+- [ ] Drag & drop files into chat
+- [ ] Paste images from clipboard
+- [ ] Upload progress indicator
+- [ ] File size limits and type validation
 
-### v0.0.1.9 — Notifications & PWA
+### v0.0.3.2 — Notifications & PWA
 - [ ] Web Push Notifications (service worker, VAPID)
 - [ ] Notification sounds (customizable)
 - [ ] Per-chat notification settings (mute, mention-only)
 - [ ] PWA install prompt (Add to Home Screen banner)
+- [ ] Unread counter in browser tab
 - [ ] Offline message queue (send when back online)
-- [ ] Background sync
 
 ---
 
@@ -84,17 +137,14 @@
 
 > Coop wird sicherer als Telegram. Nicht mal der Server-Admin kann mitlesen.
 
-### v0.0.2.0 — Security Hardening
+### v0.0.4.0 — Security Hardening
 - [ ] TOTP Two-Factor Authentication (QR code setup, backup codes)
 - [ ] Session management UI (see active sessions, revoke)
 - [ ] Account lockout after N failed login attempts
 - [ ] SQLCipher (encrypted database at-rest)
-- [ ] Content Security Policy headers
-- [ ] HSTS, X-Frame-Options, security headers
 - [ ] Rate limiting improvements
-- [ ] Password strength requirements
 
-### v0.0.2.1 — End-to-End Encryption (E2E Light)
+### v0.0.4.1 — End-to-End Encryption (E2E Light)
 - [ ] Client-side keypair generation (ECDH, WebCrypto / e2ee.js)
 - [ ] Public key storage on server (new DB table + API endpoints)
 - [ ] Private key stored in browser IndexedDB (non-exportable)
@@ -102,10 +152,9 @@
 - [ ] Group encryption (message encrypted N times, once per member)
 - [ ] 🔒 Lock icon on encrypted messages
 - [ ] Key export/import (QR code for multi-device)
-- [ ] "Verschlüsselt — nur du und dein Chatpartner können diese Nachricht lesen"
 - [ ] Unencrypted fallback for clients that don't support E2E yet
 
-### v0.0.2.2 — E2E Advanced (optional, later)
+### v0.0.4.2 — E2E Advanced (optional, later)
 - [ ] Double Ratchet Protocol (Forward Secrecy via 2key-ratchet)
 - [ ] Key verification (Safety Numbers / emoji comparison)
 - [ ] Encrypted key backup on server
@@ -118,7 +167,7 @@
 
 > Download → Registrieren auf chatcoop.at → Chatten. Wie WhatsApp.
 
-### v0.0.3.0 — App Shell (Capacitor)
+### v0.0.5.0 — App Shell (Capacitor)
 - [ ] Capacitor project setup (wrap existing React PWA)
 - [ ] Native push notifications (FCM for Android, APNs for iOS)
 - [ ] App icon and splash screen (Neobrutalism pigeon logo)
@@ -126,15 +175,14 @@
 - [ ] Biometric unlock (fingerprint/face)
 - [ ] Background message fetch
 
-### v0.0.3.1 — Android Release
+### v0.0.5.1 — Android Release
 - [ ] F-Droid build pipeline (reproducible builds, no proprietary deps)
-- [ ] F-Droid metadata and repository submission
-- [ ] Google Play Store listing ($25 one-time fee)
+- [ ] Google Play Store listing
 - [ ] APK download from chatcoop.at
 - [ ] Android-specific: notification channels, share intent
 
-### v0.0.3.2 — iOS Release
-- [ ] Apple Developer Program ($99/year, when user base justifies it)
+### v0.0.5.2 — iOS Release
+- [ ] Apple Developer Program (when user base justifies it)
 - [ ] iOS-specific: haptic feedback, share extensions
 - [ ] TestFlight beta distribution
 - [ ] App Store submission
@@ -146,7 +194,7 @@
 
 > chatcoop.at wird der Default-Server. Jeder kann mitmachen, ohne was zu hosten.
 
-### v0.0.4.0 — chatcoop.at Hub Server
+### v0.0.6.0 — chatcoop.at Hub Server
 - [ ] Production deployment (VPS in EU, Austrian/German hosting)
 - [ ] Landing page: "Coop — Dein privater Messenger"
 - [ ] Public registration (rate-limited, captcha)
@@ -155,8 +203,8 @@
 - [ ] Admin dashboard for hub operations
 - [ ] Monitoring, backups, uptime
 
-### v0.0.4.1 — Onboarding Flow
-- [ ] App-first experience: Download → Server-Auswahl (chatcoop.at als Default) → Registrieren → Los
+### v0.0.6.1 — Onboarding Flow
+- [ ] App-first experience: Download → Server-Auswahl → Registrieren → Los
 - [ ] QR-Code invite system (scan to join chat/server)
 - [ ] Contact discovery (optional: phone number or email matching)
 - [ ] "Freunde einladen" share sheet (WhatsApp/Telegram/SMS/Email)
@@ -169,26 +217,25 @@
 
 > Alle Coop-Server reden miteinander. Wie Email, aber mit Verschlüsselung.
 
-### v0.0.5.0 — Federation Protocol
+### v0.0.7.0 — Federation Protocol
 - [ ] User identity format: `@username@server.tld`
 - [ ] Server-to-server authentication (mutual TLS or signed requests)
 - [ ] DNS-based server discovery (SRV records or .well-known)
 - [ ] Message routing: HTTP-based relay between servers
 - [ ] Federated user lookup (search users across servers)
 
-### v0.0.5.1 — Federated Messaging
+### v0.0.7.1 — Federated Messaging
 - [ ] Cross-server 1:1 messages
 - [ ] Cross-server group chats (one server hosts, others participate)
-- [ ] E2E encryption across federation (keys exchanged directly between clients)
+- [ ] E2E encryption across federation
 - [ ] Delivery receipts and read status across servers
 - [ ] Offline message queuing between servers
 
-### v0.0.5.2 — Federation Management
-- [ ] Server allowlist/blocklist (admin chooses who to federate with)
+### v0.0.7.2 — Federation Management
+- [ ] Server allowlist/blocklist
 - [ ] Spam prevention (server reputation, rate limits)
 - [ ] chatcoop.at as federation hub (default peer for new servers)
 - [ ] Server directory (public list of Coop instances)
-- [ ] Federation health dashboard
 
 ---
 
@@ -198,7 +245,6 @@
 
 ### v0.1.0 — Feature Parity
 - [ ] Voice messages (record + send audio)
-- [ ] Typing indicators ("XY schreibt...")
 - [ ] Read receipts (✓✓ blue checkmarks)
 - [ ] Message editing (within 15 minutes)
 - [ ] Message deletion (for self / for everyone)

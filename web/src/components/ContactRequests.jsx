@@ -24,7 +24,7 @@ const ContactRequests = ({ requests, onAccept, onReject }) => {
         <ListItem
           key={req.username}
           sx={{
-            borderBottom: "1px solid var(--coop-gray-200)",
+            borderBottom: "2px solid var(--coop-gray-200)",
             py: 1.5,
             px: 2,
             gap: 1,
@@ -48,12 +48,21 @@ const ContactRequests = ({ requests, onAccept, onReject }) => {
               onClick={() => onAccept(req.username)}
               sx={{
                 minWidth: 32,
-                border: "2px solid var(--coop-black)",
+                border: "3px solid var(--coop-black)",
                 borderRadius: 0,
                 backgroundColor: "var(--coop-green)",
-                color: "#fff",
+                color: "var(--coop-white)",
                 p: 0.5,
-                "&:hover": { backgroundColor: "#16a34a" },
+                boxShadow: "var(--coop-shadow-sm)",
+                "&:hover": {
+                  backgroundColor: "#16a34a",
+                  transform: "translate(-1px, -1px)",
+                  boxShadow: "var(--coop-shadow)",
+                },
+                "&:active": {
+                  boxShadow: "none",
+                  transform: "translate(2px, 2px)",
+                },
               }}
             >
               <CheckIcon sx={{ fontSize: 18 }} />
@@ -63,12 +72,21 @@ const ContactRequests = ({ requests, onAccept, onReject }) => {
               onClick={() => onReject(req.username)}
               sx={{
                 minWidth: 32,
-                border: "2px solid var(--coop-black)",
+                border: "3px solid var(--coop-black)",
                 borderRadius: 0,
                 backgroundColor: "var(--coop-red)",
-                color: "#fff",
+                color: "var(--coop-white)",
                 p: 0.5,
-                "&:hover": { backgroundColor: "#dc2626" },
+                boxShadow: "var(--coop-shadow-sm)",
+                "&:hover": {
+                  backgroundColor: "var(--coop-red-hover)",
+                  transform: "translate(-1px, -1px)",
+                  boxShadow: "var(--coop-shadow)",
+                },
+                "&:active": {
+                  boxShadow: "none",
+                  transform: "translate(2px, 2px)",
+                },
               }}
             >
               <CloseIcon sx={{ fontSize: 18 }} />

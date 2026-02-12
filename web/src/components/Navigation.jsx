@@ -25,6 +25,7 @@ import Person from "@mui/icons-material/Person";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import AddIcon from "@mui/icons-material/Add";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChatBubble, Home, MoreVert, NotificationsOffOutlined, Close } from "@mui/icons-material";
 import ArticleIcon from "@mui/icons-material/Article";
@@ -35,7 +36,7 @@ import UserAvatar from "./UserAvatar";
 const UserProfile = lazy(() => import("./UserProfile"));
 const ContactList = lazy(() => import("./ContactList"));
 const GroupCreate = lazy(() => import("./GroupCreate"));
-import { formatShortDateTime, topicDisplayName, topicUrl } from "../app/utils";
+import { formatShortDateTime, topicDisplayName, topicUrl, maybeWithBearerAuth } from "../app/utils";
 import routes from "./routes";
 import { ConnectionState } from "../app/Connection";
 import subscriptionManager from "../app/SubscriptionManager";
@@ -123,6 +124,25 @@ const NavList = (props) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [contactsOpen, setContactsOpen] = useState(false);
   const [groupCreateOpen, setGroupCreateOpen] = useState(false);
+  const [ownProfile, setOwnProfile] = useState(null);
+
+  useEffect(() => {
+    if (!session.exists()) return;
+    const fetchOwnProfile = async () => {
+      try {
+        const url = `${config.base_url}/v1/coop/profile`;
+        const headers = maybeWithBearerAuth({}, session.token());
+        const response = await fetch(url, { headers });
+        if (response.ok) {
+          const data = await response.json();
+          setOwnProfile(data);
+        }
+      } catch (e) {
+        console.warn("[Navigation] Failed to load own profile", e);
+      }
+    };
+    fetchOwnProfile();
+  }, []);
 
   const handleVersionChange = () => {
     setVersionChanged(true);
@@ -252,7 +272,7 @@ const NavList = (props) => {
         {session.exists() && (
           <ListItemButton onClick={() => setProfileOpen(true)}>
             <ListItemIcon sx={{ minWidth: 40 }}>
-              <UserAvatar username={session.username()} size="sm" />
+              <UserAvatar username={session.username()} displayName={ownProfile?.display_name} avatarUrl={ownProfile?.avatar_url} size="sm" />
             </ListItemIcon>
             <ListItemText primary={t("nav_button_my_profile", "Mein Profil")} />
           </ListItemButton>
@@ -285,7 +305,7 @@ const NavList = (props) => {
           </ListItemIcon>
           <ListItemText primary={t("nav_button_documentation")} />
         </ListItemButton>
-        <Box sx={{ px: 1.5, py: 1 }}>
+        <Box sx={{ px: 1.5, py: 1, display: "flex", gap: 1 }}>
           <Button
             fullWidth
             variant="contained"
@@ -314,6 +334,36 @@ const NavList = (props) => {
           >
             {t("nav_button_subscribe")}
           </Button>
+          {session.exists() && (
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<GroupAddIcon />}
+              onClick={() => setGroupCreateOpen(true)}
+              sx={{
+                backgroundColor: "var(--coop-white)",
+                color: "var(--coop-black)",
+                border: "3px solid var(--coop-black)",
+                borderRadius: 0,
+                boxShadow: "var(--coop-shadow)",
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                py: 1.2,
+                "&:hover": {
+                  backgroundColor: "var(--coop-gray-100)",
+                  boxShadow: "var(--coop-shadow-hover)",
+                  transform: "translate(-2px, -2px)",
+                },
+                "&:active": {
+                  boxShadow: "none",
+                  transform: "translate(4px, 4px)",
+                },
+              }}
+            >
+              {t("nav_button_new_group", "Neue Gruppe")}
+            </Button>
+          )}
         </Box>
         {showUpgradeBanner && (
           // The text background gradient didn't seem to do well with switching between light/dark mode,

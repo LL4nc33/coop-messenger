@@ -116,6 +116,14 @@ func (s *Server) handleDMCreate(w http.ResponseWriter, r *http.Request, v *visit
 			return err
 		}
 
+		// Add subscription for both users so the DM appears in their sidebar
+		if err := s.addSubscriptionsForUser(u.Name, []string{topic}); err != nil {
+			log.Tag(tagDM).Warn("Failed to add subscription for creator %s: %v", u.Name, err)
+		}
+		if err := s.addSubscriptionsForUser(req.Username, []string{topic}); err != nil {
+			log.Tag(tagDM).Warn("Failed to add subscription for recipient %s: %v", req.Username, err)
+		}
+
 		log.Tag(tagDM).Info("DM created: %s <-> %s (topic=%s)", u.Name, req.Username, topic)
 	}
 

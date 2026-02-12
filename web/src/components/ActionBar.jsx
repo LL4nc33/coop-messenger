@@ -1,6 +1,6 @@
 import { AppBar, Toolbar, IconButton, Typography, Box, MenuItem, Button, Divider, ListItemIcon, Tooltip, useTheme, useMediaQuery } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import { useState, lazy, Suspense } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
@@ -16,7 +16,7 @@ import session from "../app/Session";
 import subscriptionManager from "../app/SubscriptionManager";
 import routes from "./routes";
 import db from "../app/db";
-import { topicDisplayName, darkModeEnabled } from "../app/utils";
+import { topicDisplayName, darkModeEnabled, maybeWithBearerAuth } from "../app/utils";
 import Navigation from "./Navigation";
 import accountApi from "../app/AccountApi";
 import PopupMenu from "./PopupMenu";
@@ -180,8 +180,26 @@ const ProfileIcon = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileEditMode, setProfileEditMode] = useState(false);
+  const [ownProfile, setOwnProfile] = useState(null);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!session.exists()) return;
+    const fetchOwnProfile = async () => {
+      try {
+        const url = `${config.base_url}/v1/coop/profile`;
+        const headers = maybeWithBearerAuth({}, session.token());
+        const response = await fetch(url, { headers });
+        if (response.ok) {
+          setOwnProfile(await response.json());
+        }
+      } catch (e) {
+        console.warn("[ActionBar] Failed to load own profile", e);
+      }
+    };
+    fetchOwnProfile();
+  }, []);
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -228,7 +246,7 @@ const ProfileIcon = () => {
       <PopupMenu horizontal="right" anchorEl={anchorEl} open={open} onClose={handleClose}>
         <MenuItem onClick={() => handleOpenProfile(false)}>
           <ListItemIcon>
-            <UserAvatar username={session.username()} size="sm" />
+            <UserAvatar username={session.username()} displayName={ownProfile?.display_name} avatarUrl={ownProfile?.avatar_url} size="sm" />
           </ListItemIcon>
           <b>{session.username()}</b>
         </MenuItem>

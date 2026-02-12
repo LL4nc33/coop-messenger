@@ -255,13 +255,18 @@ const LinkPreviewBlock = ({ urls }) => {
   );
 };
 
-const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionToggle, onReactionAdd, profilesCache, onAvatarClick }) => {
+const GROUP_TIME_THRESHOLD = 5 * 60; // 5 minutes in seconds
+
+const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionToggle, onReactionAdd, profilesCache, onAvatarClick, isFirstInGroup, isLastInGroup }) => {
   const { t, i18n } = useTranslation();
   const isOwn = notification.sender === session.username();
   const otherTags = unmatchedTags(notification.tags);
   const urls = extractUrls(notification.message);
   const senderProfile = profilesCache?.[notification.sender];
   const displayName = senderProfile?.display_name || notification.sender;
+  const showSender = isFirstInGroup && !isOwn && notification.sender;
+  const showAvatar = isLastInGroup && !isOwn && notification.sender;
+  const showTimestamp = isLastInGroup;
 
   return (
     <Box
@@ -272,17 +277,25 @@ const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionTog
         alignItems: "flex-end",
         gap: 1,
         maxWidth: "100%",
+        position: "relative",
+        // Compact spacing within groups
+        mt: isFirstInGroup ? 0 : -0.75,
+        "&:hover": { zIndex: 10 },
         "&:hover .reply-btn": { opacity: 1 },
       }}
     >
       {!isOwn && notification.sender && (
-        <UserAvatar
-          username={notification.sender}
-          displayName={senderProfile?.display_name}
-          avatarUrl={senderProfile?.avatar_url}
-          size="sm"
-          onClick={() => onAvatarClick?.(notification.sender)}
-        />
+        showAvatar ? (
+          <UserAvatar
+            username={notification.sender}
+            displayName={senderProfile?.display_name}
+            avatarUrl={senderProfile?.avatar_url}
+            size="sm"
+            onClick={() => onAvatarClick?.(notification.sender)}
+          />
+        ) : (
+          <Box sx={{ width: 32, minWidth: 32 }} /> // Spacer for alignment
+        )
       )}
       <Box sx={{
         maxWidth: "75%",
@@ -290,7 +303,7 @@ const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionTog
         flexDirection: "column",
         alignItems: isOwn ? "flex-end" : "flex-start",
       }}>
-        {!isOwn && notification.sender && (
+        {showSender && (
           <Typography
             variant="caption"
             sx={{ fontWeight: 700, mb: 0.25, px: 0.5, color: "text.secondary", cursor: "pointer" }}
@@ -301,6 +314,7 @@ const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionTog
         )}
 
         <Box sx={{
+          position: "relative",
           px: 2,
           py: 1,
           border: "3px solid var(--coop-black)",
@@ -338,26 +352,44 @@ const ChatBubble = React.memo(({ notification, onReply, reactions, onReactionTog
               ))}
             </Box>
           )}
+
+          {/* Action buttons overlay - positioned at top corner of bubble */}
+          <Box
+            className="reply-btn"
+            sx={{
+              position: "absolute",
+              top: -12,
+              ...(isOwn ? { left: -12 } : { right: -12 }),
+              display: "flex",
+              gap: 0.25,
+              opacity: 0,
+              transition: "opacity 0.15s",
+              backgroundColor: "var(--coop-white)",
+              border: "2px solid var(--coop-black)",
+              boxShadow: "2px 2px 0px var(--coop-black)",
+              p: 0.25,
+            }}
+          >
+            <Tooltip title={t("chat_reply_button", "Antworten")} placement="top">
+              <IconButton
+                size="small"
+                onClick={() => onReply?.(notification)}
+                sx={{ p: 0.25 }}
+              >
+                <ReplyIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </Tooltip>
+            <EmojiReactionPicker onSelect={(emoji) => onReactionAdd(notification.id, emoji)} />
+          </Box>
         </Box>
 
         <ReactionChips reactions={reactions} onToggle={(emoji) => onReactionToggle(notification.id, emoji)} />
 
-        <Box sx={{ display: "flex", alignItems: "center", mt: 0.25, px: 0.5, gap: 0.5 }}>
-          <Typography variant="caption" sx={{ fontFamily: "monospace", color: "text.disabled" }}>
+        {showTimestamp && (
+          <Typography variant="caption" sx={{ fontFamily: "monospace", color: "text.disabled", mt: 0.25, px: 0.5 }}>
             {formatShortDateTime(notification.time, i18n.language)}
           </Typography>
-          <Tooltip title={t("chat_reply_button", "Antworten")} placement="top">
-            <IconButton
-              className="reply-btn"
-              size="small"
-              onClick={() => onReply?.(notification)}
-              sx={{ opacity: 0, transition: "opacity 0.15s", p: 0.25 }}
-            >
-              <ReplyIcon sx={{ fontSize: 14 }} />
-            </IconButton>
-          </Tooltip>
-          <EmojiReactionPicker onSelect={(emoji) => onReactionAdd(notification.id, emoji)} />
-        </Box>
+        )}
 
         {notification.actions?.length > 0 && (
           <Box sx={{ mt: 0.5 }}>
@@ -743,10 +775,29 @@ const ChatView = ({ notifications, subscription }) => {
           </Button>
         </Box>
       )}
-      <Stack spacing={1.5}>
+      <Stack spacing={0.5}>
         {messages.map((notification, index) => {
           const showDateSep = index === 0 ||
             getDateKey(notification.time) !== getDateKey(messages[index - 1].time);
+
+          // Message grouping: same sender within GROUP_TIME_THRESHOLD
+          const prev = index > 0 ? messages[index - 1] : null;
+          const next = index < messages.length - 1 ? messages[index + 1] : null;
+          const isSameGroupAsPrev = prev
+            && prev.sender === notification.sender
+            && prev.event === notification.event
+            && notification.event !== "coop_nudge"
+            && Math.abs(notification.time - prev.time) < GROUP_TIME_THRESHOLD
+            && !showDateSep;
+          const isSameGroupAsNext = next
+            && next.sender === notification.sender
+            && next.event === notification.event
+            && notification.event !== "coop_nudge"
+            && Math.abs(next.time - notification.time) < GROUP_TIME_THRESHOLD
+            && getDateKey(notification.time) === getDateKey(next.time);
+          const isFirstInGroup = !isSameGroupAsPrev;
+          const isLastInGroup = !isSameGroupAsNext;
+
           return (
             <React.Fragment key={notification.id}>
               {showDateSep && <DateSeparator label={getDateLabel(notification.time, t)} />}
@@ -765,6 +816,8 @@ const ChatView = ({ notifications, subscription }) => {
                   onReactionAdd={handleReactionToggle}
                   profilesCache={profilesCache}
                   onAvatarClick={setProfileUser}
+                  isFirstInGroup={isFirstInGroup}
+                  isLastInGroup={isLastInGroup}
                 />
               )}
             </React.Fragment>

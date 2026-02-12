@@ -59,10 +59,11 @@ const MemberList = ({ open, onClose, topic }) => {
         onClose={onClose}
         PaperProps={{
           sx: {
-            width: 300,
+            width: 320,
             border: "3px solid var(--coop-black)",
             borderRadius: 0,
             backgroundColor: "var(--coop-bg)",
+            boxShadow: "-6px 0 0px var(--coop-black)",
           },
         }}
       >
@@ -71,7 +72,7 @@ const MemberList = ({ open, onClose, topic }) => {
           alignItems: "center",
           justifyContent: "space-between",
           p: 2,
-          borderBottom: "2px solid var(--coop-black)",
+          borderBottom: "3px solid var(--coop-black)",
         }}>
           <Typography
             variant="h6"
@@ -98,6 +99,8 @@ const MemberList = ({ open, onClose, topic }) => {
                 py: 1.5,
                 px: 2,
                 gap: 1.5,
+                transition: "transform 0.15s ease",
+                "&:hover": { transform: "translateX(4px)" },
               }}
             >
               <UserAvatar

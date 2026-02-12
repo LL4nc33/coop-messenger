@@ -187,6 +187,10 @@ const GroupCreate = ({ open, onClose, onCreated }) => {
             boxShadow: "var(--coop-shadow-hover)",
             backgroundColor: "var(--coop-accent)",
           },
+          "&:active": {
+            boxShadow: "none",
+            transform: "translate(2px, 2px)",
+          },
         }}
       >
         {t("group_create_button", "Gruppe erstellen")}

@@ -61,6 +61,7 @@
   --coop-font-display: 'Space Grotesk', sans-serif;
   --coop-font-body: 'DM Sans', sans-serif;
   --coop-font-ui: 'JetBrains Mono', monospace;
+  --coop-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   /* Link Color */
   --coop-link: #2563EB;
@@ -897,10 +898,6 @@ a:hover {
   border-bottom: var(--coop-border-thin) !important;
 }
 
-/* Grid/Stack item separators for settings rows */
-.MuiStack-root > .MuiBox-root + .MuiBox-root {
-  border-top: 1px solid var(--coop-gray-200);
-}
 
 /* ============================================
    MUI OVERRIDES - DIVIDER

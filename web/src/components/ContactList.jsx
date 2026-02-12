@@ -104,6 +104,7 @@ const ContactList = ({ open, onClose, onStartDM }) => {
             border: "3px solid var(--coop-black)",
             borderRadius: 0,
             backgroundColor: "var(--coop-bg)",
+            boxShadow: "-6px 0 0px var(--coop-black)",
           },
         }}
       >
@@ -112,7 +113,7 @@ const ContactList = ({ open, onClose, onStartDM }) => {
           alignItems: "center",
           justifyContent: "space-between",
           p: 2,
-          borderBottom: "2px solid var(--coop-black)",
+          borderBottom: "3px solid var(--coop-black)",
         }}>
           <Typography variant="h6" sx={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700 }}>
             {t("contacts_title", "Kontakte")}
@@ -148,10 +149,12 @@ const ContactList = ({ open, onClose, onStartDM }) => {
                 key={contact.username}
                 onClick={() => handleDM(contact.username)}
                 sx={{
-                  borderBottom: "1px solid var(--coop-gray-200)",
+                  borderBottom: "2px solid var(--coop-gray-200)",
                   py: 1.5,
                   px: 2,
                   gap: 1.5,
+                  transition: "transform 0.15s ease",
+                  "&:hover": { transform: "translateX(4px)" },
                 }}
               >
                 <UserAvatar
@@ -190,6 +193,10 @@ const ContactList = ({ open, onClose, onStartDM }) => {
                       transform: "translate(-2px, -2px)",
                       boxShadow: "var(--coop-shadow-hover)",
                       backgroundColor: "var(--coop-accent)",
+                    },
+                    "&:active": {
+                      boxShadow: "none",
+                      transform: "translate(2px, 2px)",
                     },
                   }}
                 >

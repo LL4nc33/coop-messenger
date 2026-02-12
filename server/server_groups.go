@@ -161,6 +161,19 @@ func (s *Server) handleGroupCreate(w http.ResponseWriter, r *http.Request, v *vi
 		return err
 	}
 
+	// Add subscriptions for creator and all members so the group appears in their sidebar
+	if err := s.addSubscriptionsForUser(u.Name, []string{topic}); err != nil {
+		log.Tag(tagGroups).Warn("Failed to add subscription for creator %s: %v", u.Name, err)
+	}
+	for _, member := range req.Members {
+		if member == u.Name {
+			continue
+		}
+		if err := s.addSubscriptionsForUser(member, []string{topic}); err != nil {
+			log.Tag(tagGroups).Warn("Failed to add subscription for member %s: %v", member, err)
+		}
+	}
+
 	log.Tag(tagGroups).Info("Group created: %s (topic=%s) by %s with %d members", req.Name, topic, u.Name, len(req.Members))
 	return s.writeJSON(w, &apiGroupCreateResponse{Topic: topic})
 }
