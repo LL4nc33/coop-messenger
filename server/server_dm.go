@@ -32,7 +32,8 @@ type apiDMCreateRequest struct {
 }
 
 type apiDMCreateResponse struct {
-	Topic string `json:"topic"`
+	Topic       string `json:"topic"`
+	DisplayName string `json:"display_name,omitempty"`
 }
 
 type apiDMListEntry struct {
@@ -118,7 +119,13 @@ func (s *Server) handleDMCreate(w http.ResponseWriter, r *http.Request, v *visit
 		log.Tag(tagDM).Info("DM created: %s <-> %s (topic=%s)", u.Name, req.Username, topic)
 	}
 
-	return s.writeJSON(w, &apiDMCreateResponse{Topic: topic})
+	// Resolve display name for the partner
+	displayName := req.Username
+	if profile, err := s.userManager.Profile(req.Username); err == nil && profile != nil && profile.DisplayName != "" {
+		displayName = profile.DisplayName
+	}
+
+	return s.writeJSON(w, &apiDMCreateResponse{Topic: topic, DisplayName: displayName})
 }
 
 // handleDMList handles GET /v1/coop/dm - list all DMs for the current user

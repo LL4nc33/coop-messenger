@@ -5,6 +5,8 @@ import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { useTranslation } from "react-i18next";
 import UserAvatar from "./UserAvatar";
 import accountApi from "../app/AccountApi";
+import subscriptionManager from "../app/SubscriptionManager";
+import config from "../app/config";
 
 const GroupCreate = ({ open, onClose, onCreated }) => {
   const { t } = useTranslation();
@@ -55,7 +57,19 @@ const GroupCreate = ({ open, onClose, onCreated }) => {
     setCreating(true);
     setError("");
     try {
-      const result = await accountApi.createGroup(name.trim(), [...selected]);
+      const groupName = name.trim();
+      const result = await accountApi.createGroup(groupName, [...selected]);
+      // Create local subscription with group name as display name
+      await subscriptionManager.add(config.base_url, result.topic, {
+        displayName: groupName,
+      });
+      // Persist display name on server for sync
+      try {
+        await accountApi.addSubscription(config.base_url, result.topic);
+        await accountApi.updateSubscription(config.base_url, result.topic, { display_name: groupName });
+      } catch (e) {
+        // Non-critical
+      }
       onCreated?.(result.topic);
       onClose();
     } catch (e) {

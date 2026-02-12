@@ -7,6 +7,7 @@ import UserAvatar from "./UserAvatar";
 import session from "../app/Session";
 import config from "../app/config";
 import accountApi from "../app/AccountApi";
+import subscriptionManager from "../app/SubscriptionManager";
 import { maybeWithBearerAuth } from "../app/utils";
 
 const statusOptions = [
@@ -169,8 +170,19 @@ const UserProfile = ({ open, onClose, username, initialEditMode = false }) => {
   const handleSendMessage = async () => {
     try {
       const result = await accountApi.startDM(username);
+      const dmDisplayName = result.display_name || username;
+      // Create local subscription with partner display name
+      await subscriptionManager.add(config.base_url, result.topic, {
+        displayName: dmDisplayName,
+      });
+      // Persist display name on server for sync across devices
+      try {
+        await accountApi.addSubscription(config.base_url, result.topic);
+        await accountApi.updateSubscription(config.base_url, result.topic, { display_name: dmDisplayName });
+      } catch (e) {
+        // Non-critical - local displayName is sufficient
+      }
       onClose();
-      // Navigate to the DM topic
       window.location.hash = `#/${result.topic}`;
     } catch (e) {
       console.warn("[UserProfile] Start DM failed", e);

@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import UserAvatar from "./UserAvatar";
 import { OnlineIndicator } from "./UserProfile";
 import accountApi from "../app/AccountApi";
+import subscriptionManager from "../app/SubscriptionManager";
+import config from "../app/config";
 
 const ContactAdd = lazy(() => import("./ContactAdd"));
 const ContactRequests = lazy(() => import("./ContactRequests"));
@@ -71,6 +73,18 @@ const ContactList = ({ open, onClose, onStartDM }) => {
   const handleDM = async (username) => {
     try {
       const result = await accountApi.startDM(username);
+      const dmDisplayName = result.display_name || username;
+      // Create local subscription with partner display name
+      await subscriptionManager.add(config.base_url, result.topic, {
+        displayName: dmDisplayName,
+      });
+      // Persist display name on server for sync across devices
+      try {
+        await accountApi.addSubscription(config.base_url, result.topic);
+        await accountApi.updateSubscription(config.base_url, result.topic, { display_name: dmDisplayName });
+      } catch (e) {
+        // Non-critical
+      }
       onStartDM?.(result.topic);
       onClose();
     } catch (e) {
