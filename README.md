@@ -33,7 +33,7 @@ Coop is a private messenger you host yourself. Built as a fork of the excellent 
   <img src=".github/images/coop-desktop-dark.png" width="45%" alt="Coop Desktop Dark Mode">
 </p>
 <p align="center">
-  <img src=".github/images/coop-mobile-closed.png" width="20%" alt="Coop Mobile">
+  <img src=".github/images/coop-mobile-chat.png" width="20%" alt="Coop Mobile">
   <img src=".github/images/coop-admin-light.png" width="35%" alt="Coop Admin Panel">
   <img src=".github/images/admin-invites-desktop.png" width="35%" alt="Coop Invites">
 </p>
@@ -73,8 +73,8 @@ Coop is a private messenger you host yourself. Built as a fork of the excellent 
 - **Neobrutalism design** -- Bold 3px borders, no border-radius, accent colors, strong shadows
 - **Theme toggle** -- Light / Dark / System (3-stage toggle)
 - **Accent colors** -- 4 presets (Sand, Khaki, Olive, Gold) + custom color picker
-- **Mobile-first PWA** -- Responsive layout with swipe drawer, installable on any device
-- **German UI** -- Complete German localization (550+ i18n keys)
+- **Mobile-friendly** -- Responsive layout with swipe drawer, works on any device
+- **German UI** -- Complete German localization (590+ i18n keys)
 - **Smart auto-scroll** -- Only scrolls on new messages when at bottom; "New messages" button otherwise
 - **Unread badges** -- Pink counter badges per chat in the sidebar
 - **Date separators** -- "Today", "Yesterday", DD.MM.YYYY between messages
@@ -167,7 +167,7 @@ For all configuration options, see the [ntfy documentation](https://docs.ntfy.sh
 
 ### Mobile
 
-Coop is a PWA (Progressive Web App) and can be installed directly from the browser on any device -- no app store needed. Native Android and iOS apps are on the [roadmap](docs/ROADMAP.md).
+Coop works in any mobile browser with a responsive layout and swipe drawer. A proper PWA manifest for "Add to Home Screen" and native Android/iOS apps are on the [roadmap](docs/ROADMAP.md).
 
 ## Tech Stack
 
