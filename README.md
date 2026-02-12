@@ -29,13 +29,19 @@ Coop is a private messenger you host yourself. Built as a fork of the excellent 
 ## Screenshots
 
 <p align="center">
-  <img src=".github/images/coop-desktop-light.png" width="45%" alt="Coop Desktop Light Mode">
-  <img src=".github/images/coop-desktop-dark.png" width="45%" alt="Coop Desktop Dark Mode">
+  <img src=".github/images/coop-chat-light.png" width="45%" alt="Chat Light Mode">
+  <img src=".github/images/coop-chat-dark.png" width="45%" alt="Chat Dark Mode">
 </p>
 <p align="center">
-  <img src=".github/images/coop-mobile-chat.png" width="20%" alt="Coop Mobile">
-  <img src=".github/images/coop-admin-light.png" width="35%" alt="Coop Admin Panel">
-  <img src=".github/images/admin-invites-desktop.png" width="35%" alt="Coop Invites">
+  <img src=".github/images/coop-mobile-chat.png" width="15%" alt="Mobile Chat">
+  <img src=".github/images/coop-mobile-sidebar.png" width="15%" alt="Mobile Sidebar">
+  <img src=".github/images/coop-profile.png" width="30%" alt="User Profile">
+  <img src=".github/images/coop-members.png" width="30%" alt="Member List">
+</p>
+<p align="center">
+  <img src=".github/images/coop-startseite.png" width="30%" alt="Dashboard">
+  <img src=".github/images/coop-contacts.png" width="30%" alt="Contacts">
+  <img src=".github/images/coop-admin.png" width="30%" alt="Admin Panel">
 </p>
 
 ## Features
