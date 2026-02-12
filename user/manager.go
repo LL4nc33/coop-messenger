@@ -616,11 +616,12 @@ var (
 // Manager is an implementation of Manager. It stores users and access control list
 // in a SQLite database.
 type Manager struct {
-	config     *Config
-	db         *sql.DB
-	statsQueue map[string]*Stats       // "Queue" to asynchronously write user stats to the database (UserID -> Stats)
-	tokenQueue map[string]*TokenUpdate // "Queue" to asynchronously write token access stats to the database (Token ID -> TokenUpdate)
-	mu         sync.Mutex
+	config        *Config
+	db            *sql.DB
+	statsQueue    map[string]*Stats       // "Queue" to asynchronously write user stats to the database (UserID -> Stats)
+	tokenQueue    map[string]*TokenUpdate // "Queue" to asynchronously write token access stats to the database (Token ID -> TokenUpdate)
+	lastSeenQueue map[string]int64        // Coop: "Queue" to batch last_seen updates (UserID -> Unix timestamp)
+	mu            sync.Mutex
 }
 
 // Config holds the configuration for the user Manager
@@ -664,10 +665,11 @@ func NewManager(config *Config) (*Manager, error) {
 		return nil, err
 	}
 	manager := &Manager{
-		db:         db,
-		config:     config,
-		statsQueue: make(map[string]*Stats),
-		tokenQueue: make(map[string]*TokenUpdate),
+		db:            db,
+		config:        config,
+		statsQueue:    make(map[string]*Stats),
+		tokenQueue:    make(map[string]*TokenUpdate),
+		lastSeenQueue: make(map[string]int64),
 	}
 	if err := manager.maybeProvisionUsersAccessAndTokens(); err != nil {
 		return nil, err
@@ -1006,7 +1008,39 @@ func (a *Manager) asyncQueueWriter(interval time.Duration) {
 		if err := a.writeTokenUpdateQueue(); err != nil {
 			log.Tag(tag).Err(err).Warn("Writing token update queue failed")
 		}
+		if err := a.writeLastSeenQueue(); err != nil {
+			log.Tag(tag).Err(err).Warn("Writing last seen queue failed")
+		}
 	}
+}
+
+// EnqueueLastSeen enqueues a last_seen update for a user (batched write)
+func (a *Manager) EnqueueLastSeen(userID string) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.lastSeenQueue[userID] = time.Now().Unix()
+}
+
+func (a *Manager) writeLastSeenQueue() error {
+	a.mu.Lock()
+	if len(a.lastSeenQueue) == 0 {
+		a.mu.Unlock()
+		return nil
+	}
+	queue := a.lastSeenQueue
+	a.lastSeenQueue = make(map[string]int64)
+	a.mu.Unlock()
+	tx, err := a.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for userID, lastSeen := range queue {
+		if _, err := tx.Exec(updateProfileLastSeenQuery, lastSeen, userID); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func (a *Manager) writeUserStatsQueue() error {

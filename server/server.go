@@ -399,6 +399,10 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 		s.handleError(w, r, v, err)
 		return
 	}
+	// Coop: Track last-seen for authenticated users (batched writes)
+	if u := v.User(); u != nil && s.userManager != nil {
+		s.userManager.EnqueueLastSeen(u.ID)
+	}
 	ev := logvr(v, r)
 	if ev.IsTrace() {
 		ev.Field("http_request", renderHTTPRequest(r)).Trace("HTTP request started")
